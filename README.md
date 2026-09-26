@@ -1,105 +1,93 @@
 # AutonPay (PayFi & Autonomous M2M Settlement Protocol)
 
-[![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-14F195?style=for-the-badge&logo=solana&logoColor=white)](https://solana.com)
-[![Frontend](https://img.shields.io/badge/Vite%20%7C%20React%2018-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://vitejs.dev)
-[![Styling](https://img.shields.io/badge/Tailwind_CSS-38BDF8?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![Solana](https://img.shields.io/badge/Solana-Devnet-14F195?logo=solana&logoColor=white)](https://solana.com)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Framework](https://img.shields.io/badge/Frontend-Vite%20%7C%20React%20%7C%20Tailwind-61DAFB)](https://vitejs.dev)
+[![Architecture](https://img.shields.io/badge/Protocol-PayFi%20%2B%20Autonomous%20M2M-purple)](https://solscan.io)
 
-**AutonPay** adalah infrastruktur **Payment Finance (PayFi)** terdesentralisasi generasi berikutnya yang menjembatani transaksi komersial digital, penyelesaian pembayaran instan, dan eksekusi otonom antar-agen kecerdasan buatan (*Machine-to-Machine / M2M*) di atas jaringan berkecepatan tinggi **Solana**.
+**AutonPay** adalah infrastruktur **Payment Finance (PayFi)** terdesentralisasi di atas jaringan **Solana** yang dirancang untuk penyelesaian pembayaran instan produk digital, penerbitan lisensi kriptografis on-chain, serta eksekusi transaksi otonom antar-agen kecerdasan buatan (*Machine-to-Machine / M2M*).
 
 ---
 
 ## ⚡ Executive Summary & Value Proposition
 
-Model *payment gateway* Web3 konvensional umumnya pasif: dana hanya berpindah tangan tanpa menghasilkan nilai tambah produktif. AutonPay merevolusi alur tersebut dengan menyatukan pembayaran komersial digital langsung dengan mesin **Real Yield Distribution**:
+Model gateway pembayaran Web3 dan e-commerce konvensional kerap menghadapi settlement tertunda, potongan fee yang tidak transparan, serta ketiadaan otomasi transaksi mesin. 
 
-1. **PayFi Instant Settlement**: Pembelian lisensi dan produk komputasi digital dengan konfirmasi kriptografis on-chain berkecepatan sub-detik.
-2. **Autonomous M2M AI Agent**: Agen mandiri yang dapat mengeksekusi siklus *auto-purchase* layanan, API, dan komputasi tanpa campur tangan manusia.
-3. **Automated 4-Pool Real Yield**: Setiap *fee* protokol langsung dipecah secara atomik dan transparan ke 4 pool ekosistem:
-   * **40% Yield Optimizer Vault**: Memperdalam likuiditas dan imbal hasil vault protokol.
-   * **30% $ZQI Real Yield Pool**: Didistribusikan kepada staker token tata kelola.
-   * **15% Affiliate Treasury**: Insentif instan untuk referral dan pertumbuhan komunitas.
-   * **15% Protocol Operations**: Pemeliharaan infrastruktur relayer dan node RPC.
-4. **MEV-Resistant Atomic Swap**: Integrasi likuiditas instan untuk konversi aset dasar (SOL / USDC / $ZQI) dengan perlindungan *slippage*.
+AutonPay memecahkan tantangan ini dengan menyatukan pembayaran komersial digital langsung ke dalam arsitektur PayFi berbasis Solana:
+
+1. **Instant Commercial Settlement**: Pembayaran diproses dengan finalitas sub-detik tanpa ketergantungan pada kustodian atau escrow manual.
+2. **Atomic On-Chain Fee Split (90 : 5 : 5)**: Setiap transaksi komersial digital langsung dipecah secara paralel dan atomik di layer smart contract:
+   * **90% Vendor**: Diterima langsung oleh penjual atau kreator produk digital.
+   * **5% Admin / Protocol**: Mendukung pemeliharaan relayer, node RPC, dan keberlanjutan platform.
+   * **5% Referral / Affiliate**: Komisi instan langsung cair ke wallet mitra rujukan.
+3. **Autonomous M2M (Machine-to-Machine) Commerce**: Agen AI dapat mengeksekusi pembelian lisensi API, kuota komputasi, dan aset digital secara mandiri tanpa campur tangan manusia.
+4. **Cryptographic License Delivery**: Setiap transaksi mencetak bukti lisensi digital yang terverifikasi dan dapat diaudit langsung di blockchain Solana Explorer.
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ Arsitektur Protokol
 
 ```text
-               ┌──────────────────────────────────────────────┐
-               │         Client / Autonomous M2M Agent        │
-               └──────────────────────┬───────────────────────┘
-                                      │
-                                      ▼
-               ┌──────────────────────────────────────────────┐
-               │           AutonPay Runtime Gateway           │
-               │   - Nonce Validation & Circuit Breaker       │
-               │   - Cryptographic Proof Verification         │
-               └──────────────────────┬───────────────────────┘
-                                      │
-                 ┌────────────────────┴────────────────────┐
-                 ▼                                         ▼
-   ┌──────────────────────────┐              ┌──────────────────────────┐
-   │    Atomic Token Swap     │              │   PayFi Digital License  │
-   │      (USDC ↔ ZQI)        │              │    Issuance & Delivery   │
-   └─────────────┬────────────┘              └─────────────┬────────────┘
-                 │                                         │
-                 └────────────────────┬────────────────────┘
-                                      ▼
-               ┌──────────────────────────────────────────────┐
-               │          On-Chain Fee Split Engine           │
-               └──────────────────────┬───────────────────────┘
-                                      │
-          ┌───────────────┬───────────┴───────────┬───────────────┐
-          ▼               ▼                       ▼               ▼
-     ┌─────────┐     ┌─────────┐             ┌─────────┐     ┌─────────┐
-     │ 40%     │     │ 30%     │             │ 15%     │     │ 15%     │
-     │ Vault   │     │ Staking │             │ Affil.  │     │ Ops     │
-     └─────────┘     └─────────┘             └─────────┘     └─────────┘
+[ Pembeli / Agen AI M2M ]
+           │
+           │  (Eksekusi Pembelian Lisensi Digital)
+           ▼
+┌──────────────────────────────────────────────┐
+│           AutonPay Settlement Core           │
+│   - Solana Web3.js & Nonce Verification      │
+│   - Atomic Multi-Instruction Transaction     │
+└──────────────────────┬───────────────────────┘
+                       │
+                       │ Split Otomatis dalam 1 Transaksi
+                       ▼
+       ┌───────────────┼───────────────┐
+       │ (90%)         │ (5%)          │ (5%)
+       ▼               ▼               ▼
+┌──────────────┐┌──────────────┐┌──────────────┐
+│    Vendor    ││  Admin / Ops ││  Affiliate   │
+│    Wallet    ││   Platform   ││   Referral   │
+└──────────────┘└──────────────┘└──────────────┘
+                       │
+                       ▼
+       [ Bukti Lisensi & Hash On-Chain Terbit ]
 ```
 
 ---
 
-## 🧩 Modul & Fitur Utama
+## 🔑 Fitur Utama
 
-### 1. 🤖 Autonomous M2M Agent Controller
-* Dilengkapi *telemetry dashboard* real-time dengan status indikator aktif.
-* Kontrol eksekusi *one-click* (`Start Agent` / `Stop Agent`) untuk mengotomasi alur pembelian kuota komputasi.
-* *Emergency circuit breaker* bawaan untuk menjaga keamanan saldo pengguna saat anomali transaksi terdeteksi.
+### 1. 💳 PayFi Automated Revenue Split (90 : 5 : 5)
+Setiap transaksi komersial digital dipecah secara non-custodial:
+* **90% ke Vendor**: Kreator menerima hak hasil penjualan penuh tanpa potongan perantara tersembunyi.
+* **5% ke Admin Platform**: Mengamankan biaya operasional infrastruktur dan pemeliharaan protokol.
+* **5% ke Mitra Referral**: Menggerakkan akselerasi adopsi platform melalui insentif affiliate instan.
 
-### 2. 💱 MEV-Protected Swap Engine
-* Antarmuka pertukaran token instan antara SOL, USDC, dan $ZQI.
-* Perhitungan otomatis *price impact* dan *slippage tolerance*.
-* *Log visual* distribusi fee real-time langsung di bawah form swap.
+### 2. 🤖 Autonomous M2M AI Agent Engine
+* **Agentic Automation**: Modul agen AI dengan pemicu mandiri (*non-custodial trigger*) untuk memantau kuota dan mengeksekusi pembelian lisensi otomatis saat batas ambang (*threshold*) tercapai.
+* **Safety Controls**: Dilengkapi fitur *Start Agent*, *Stop Agent*, batas alokasi dana (*spending cap*), dan pemantauan log aktivitas real-time.
 
-### 3. 🔐 $ZQI Staking & Time-Weighted Multiplier
-* Kunci aset $ZQI untuk mendapatkan hak bagi hasil dari 30% fee protokol.
-* *Dynamic multiplier slider* berbasis durasi penguncian untuk memaksimalkan bobot perolehan *Real Yield* USDC.
-* Mekanisme *Emergency Early Unlock* transparan dengan kalkulasi penalti on-chain.
-
-### 4. 📜 On-Chain Cryptographic Proof
-* Setiap lisensi produk yang berhasil diterbitkan menyertakan *signature identifier* unik.
-* Terhubung langsung dengan Solana Explorer / Solscan Devnet untuk audit publik tanpa perantara.
+### 3. 📜 On-Chain Cryptographic License Delivery
+* Verifikasi instan melalui jaringan Solana Devnet.
+* Modal konfirmasi penerbitan lisensi yang ringkas, responsif, dan optimal untuk layar desktop maupun ponsel.
+* Hash bukti lisensi unik terhubung langsung dengan Solscan Devnet Explorer untuk transparansi audit publik.
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Tooling
 
-* **Blockchain**: Solana (Devnet)
+* **Blockchain Layer**: Solana Devnet (`@solana/web3.js`, `@solana/wallet-adapter`)
 * **Frontend Library**: React 18, Vite
-* **Web3 Integration**: `@solana/web3.js`, `@solana/wallet-adapter-react`, `@solana/wallet-adapter-react-ui`
-* **Styling**: Tailwind CSS & Lucide Icons
-* **Deployment & CDN**: Vercel Edge Platform
+* **Styling**: Tailwind CSS, Lucide Icons
+* **Deployment & CDN**: Vercel Edge Platform, GitHub
 
 ---
 
-## 🚀 Panduan Menjalankan Proyek (Local Setup)
+## 🚀 Panduan Menjalankan Proyek (Local Development)
 
 ### Prasyarat
-* [Node.js](https://nodejs.org/) versi 18 ke atas
+* [Node.js](https://nodejs.org/) v18 atau versi lebih baru
 * [Git](https://git-scm.com/)
-* Solana Wallet Browser Extension (Phantom, Solflare, atau Backpack) yang disetel ke **Devnet**
+* Solana Wallet Browser Extension (Phantom, Solflare, atau Backpack) yang disetel ke mode **Devnet**
 
 ### Langkah Instalasi
 
@@ -114,7 +102,7 @@ Model *payment gateway* Web3 konvensional umumnya pasif: dana hanya berpindah ta
    npm install
    ```
 
-3. **Jalankan local development server:**
+3. **Jalankan development server lokal:**
    ```bash
    npm run dev
    ```
@@ -129,16 +117,16 @@ Model *payment gateway* Web3 konvensional umumnya pasif: dana hanya berpindah ta
 
 ## 📱 Mobile-First Native Experience
 
-AutonPay dirancang secara adaptif (*responsive design*) dengan integrasi penuh untuk peramban ponsel:
-* **Bottom App Navigation Dock**: Memudahkan akses 5 tab inti (Swap, Lock, Vault, Affiliate, PayFi).
-* **Safe-Zone Layout**: Terhindar dari benturan bilah status browser mobile dan *overflow clipping*.
-* **One-Tap Wallet Adapter**: Kompatibel dengan *deep-link* wallet mobile Solana.
+AutonPay dirancang adaptif penuh untuk penggunaan perangkat mobile:
+* **Bottom App Navigation Dock**: Akses cepat ke seluruh modul operasional.
+* **Safe-Zone Layout**: Terhindar dari benturan bilah status browser HP dan *overflow clipping*.
+* **One-Tap Wallet Adapter**: Kompatibel dengan *deep-link* wallet mobile Web3 Solana.
 
 ---
 
 ## ⚠️ Disclaimer Keamanan
 
-Protokol ini saat ini berjalan di lingkungan **Solana Devnet** untuk tujuan pengujian performa, verifikasi logika PayFi, dan demonstrasi hackathon. Jangan mengirim token atau aset riil Mainnet ke alamat kontrak Devnet yang tertera di aplikasi.
+Protokol ini saat ini beroperasi di lingkungan **Solana Devnet** untuk pengujian performa, verifikasi logika PayFi M2M, dan evaluasi hackathon. Jangan mengirim aset riil Mainnet ke alamat kontrak Devnet yang tertera di aplikasi.
 
 ---
 
