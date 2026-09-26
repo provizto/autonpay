@@ -56,9 +56,9 @@ AutonPay menyederhanakan perdagangan digital Web3 melalui 4 pilar utama:
                                │
                                ▼
      ┌──────────────────────────────────────────────────┐
-     │  Modal Penyerahan Lisensi Digital On-Chain      │
+     │  Modal Penyerahan Lisensi Digital On-Chain       │
      │  - Bukti Kriptografis Unik (Hash Transaksi)      │
-     │  - Verifikasi Terbuka di Solscan Devnet         │
+     │  - Verifikasi Terbuka di Solscan Devnet          │
      └──────────────────────────────────────────────────┘
 ```
 
