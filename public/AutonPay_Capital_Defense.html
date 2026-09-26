@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZoniqFi Protocol — Capital Allocation & Funding Roadmap Defense</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    :root {
+      --primary: #0f172a;
+      --secondary: #334155;
+      --accent: #0284c7;
+      --border: #e2e8f0;
+      --bg-soft: #f8fafc;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --success: #16a34a;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: var(--text);
+      background-color: #ffffff;
+      line-height: 1.5;
+      margin: 0;
+      padding: 40px;
+      font-size: 13px;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* Print Control Bar (Hidden on Print) */
+    .print-bar {
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .print-bar button {
+      background: #0284c7;
+      color: white;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+    .print-bar button:hover {
+      background: #0369a1;
+    }
+
+    /* Document Header */
+    .doc-header {
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--primary);
+      margin: 0 0 4px 0;
+    }
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+      font-weight: 500;
+    }
+    .doc-badge {
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .badge-status {
+      display: inline-block;
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    /* Executive Highlights */
+    .exec-summary {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      padding: 16px 20px;
+      border-radius: 6px;
+      margin-bottom: 26px;
+    }
+    .exec-summary h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .exec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .exec-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 6px;
+    }
+    .exec-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .exec-val {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 2px;
+    }
+
+    /* Tables */
+    h2 {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 28px 0 12px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .target-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      background: #f1f5f9;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 12px;
+    }
+    th {
+      background: #f1f5f9;
+      color: var(--secondary);
+      text-align: left;
+      padding: 9px 12px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      vertical-align: top;
+    }
+    td.cost {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      white-space: nowrap;
+      color: var(--primary);
+    }
+    tr:nth-child(even) td {
+      background-color: #fafafa;
+    }
+
+    /* Q&A Section */
+    .qa-box {
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .qa-question {
+      background: #f8fafc;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--primary);
+      font-size: 12.5px;
+    }
+    .qa-answer {
+      padding: 10px 14px;
+      color: var(--secondary);
+      font-size: 12px;
+      line-height: 1.6;
+      background: #ffffff;
+    }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+      font-size: 10.5px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Print Optimization Rules */
+    @media print {
+      body {
+        padding: 0;
+        font-size: 11.5px;
+      }
+      .print-bar {
+        display: none !important;
+      }
+      .page-break {
+        page-break-before: always;
+      }
+      .avoid-break {
+        page-break-inside: avoid;
+      }
+      @page {
+        margin: 1.2cm;
+        size: A4 portrait;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Print Button Bar (Hidden when printed) -->
+  <div class="print-bar">
+    <div>
+      <strong>ZoniqFi Executive Presentation Sheet</strong>
+      <div style="font-size: 11px; opacity: 0.8;">Print or Save as PDF for investor and accelerator due diligence meetings.</div>
+    </div>
+    <button onclick="window.print()">🖨️ Print / Save as PDF</button>
+  </div>
+
+  <!-- Document Header -->
+  <div class="doc-header">
+    <div>
+      <h1 class="brand-title">ZoniqFi Protocol</h1>
+      <p class="brand-sub">Capital Allocation Breakdown, PayFi Integration & Milestone Execution Defense</p>
+    </div>
+    <div class="doc-badge">
+      <div class="badge-status">CONFIDENTIAL • ACCELERATOR EVALUATION</div>
+      <div>Ecosystem: Solana Devnet to Mainnet</div>
+      <div>Target Raise: $190,000 – $290,000</div>
+    </div>
+  </div>
+
+  <!-- Executive Summary Box -->
+  <div class="exec-summary">
+    <h3>Funding Strategy & Capital Philosophy</h3>
+    <p style="margin: 0; color: var(--secondary); font-size: 12px;">
+      ZoniqFi adopts a <strong>tranche-based, milestone-gated</strong> capital framework. Funding strictly follows verified technical releases bridging Web2 fiat retail (Direct QRIS) with Solana on-chain liquidity. Up to <strong>45% of total capital</strong> is preserved as balance-sheet assets (Protocol-Owned Liquidity) rather than burned on operational overhead.
+    </p>
+
+    <div class="exec-grid">
+      <div class="exec-card">
+        <div class="exec-label">Phase 2 (Q4 2026)</div>
+        <div class="exec-val">$40,000 – $60,000</div>
+        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Pyth Oracles, Anchor Fee Routing & Audits</div>
+      </div>
+      <div class="exec-card">
+        <div class="exec-label">Phase 3 (Q1 2027)</div>
+        <div class="exec-val">$100,000 – $150,000</div>
+        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Mainnet Deployment & Seed POL Liquidity</div>
+      </div>
+      <div class="exec-card">
+        <div class="exec-label">Phase 4 (Q2-Q3 2027)</div>
+        <div class="exec-val">$50,000 – $80,000</div>
+        <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">B2B Merchant SDK & Regional Creator Expansion</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 TABLE -->
+  <div class="avoid-break">
+    <h2>
+      <span>Phase 2 • Q4 2026: Pyth Oracles, Anchor Fee Routing, Audits & Multisig</span>
+      <span class="target-tag">Target: $40,000 – $60,000</span>
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">Cost Item</th>
+          <th style="width: 20%;">Estimated Budget</th>
+          <th>Technical & Operational Justification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Full-Suite Security Audit</strong></td>
+          <td class="cost">$28,000 – $38,000</td>
+          <td>Engaging top-tier Solana security auditors (<strong>OtterSec</strong> or <strong>Sec3</strong>). Auditing all core modules (Swap, Lock, Vault, Affiliate, and PayFi Gas Relayer) with focus on PDA seed validation, gas tank debit math, and early-unlock burn integrity.</td>
+        </tr>
+        <tr>
+          <td><strong>Pyth Oracles & Anchor Fee Routing</strong></td>
+          <td class="cost">$6,000 – $9,000</td>
+          <td>Integrating <strong>Pyth Network Oracles</strong> for real-time sub-second SOL/USD/IDR price feeds. Writing Anchor programs to atomically split the 5% PayFi fee across the 4-pool architecture (40% Vault, 30% $ZQI Staking, 15% Affiliate, 15% Ops) and deploying the embedded 1-Click AMM Gas Refill widget.</td>
+        </tr>
+        <tr>
+          <td><strong>Enterprise RPC Infrastructure</strong></td>
+          <td class="cost">$3,000 – $5,000</td>
+          <td>6-month prepaid commitment for dedicated enterprise RPC clusters (<strong>Helius Enterprise</strong> or <strong>Triton One</strong>) to guarantee high-throughput transaction broadcast reliability for DEX trades, Pyth price feeds, and checkout events.</td>
+        </tr>
+        <tr>
+          <td><strong>Squads Multisig Governance</strong></td>
+          <td class="cost">$3,000 – $8,000</td>
+          <td>Deployment of Squads v4 multisig vault (3-of-5 threshold) for Program Upgrade Authority and treasury key management, combined with an initial community bug bounty reserve.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PHASE 3 TABLE -->
+  <div class="avoid-break">
+    <h2>
+      <span>Phase 3 • Q1 2027: Mainnet Deployment & Liquidity Seeding</span>
+      <span class="target-tag">Target: $100,000 – $150,000</span>
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">Cost Item</th>
+          <th style="width: 20%;">Estimated Budget</th>
+          <th>Financial & Balance Sheet Justification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Protocol-Owned Liquidity (POL)</strong></td>
+          <td class="cost">$75,000 – $105,000</td>
+          <td><strong>Balance Sheet Asset (Not Cash Burn):</strong> Injected into paired AMM pools (<strong>$ZQI/USDC</strong> & <strong>$ZQI/SOL</strong>). Establishes deep market backing, stabilizes PayFi pricing rails, and accrues recurring LP swap fees to the treasury.</td>
+        </tr>
+        <tr>
+          <td><strong>Account Rent & Relayer Gas Reserves</strong></td>
+          <td class="cost">$8,000 – $15,000</td>
+          <td>Solana account rent-exemption for merchant registries, SKU product state PDAs, and high-frequency fee distribution relayer reserves.</td>
+        </tr>
+        <tr>
+          <td><strong>Jito MEV-Protection Setup</strong></td>
+          <td class="cost">$5,000 – $10,000</td>
+          <td>Direct integration with Jito Block Engine validator bundles to guarantee sandwich-free swap execution for protocol users and merchant payments.</td>
+        </tr>
+        <tr>
+          <td><strong>Merchant Acquisition & Launch Grants</strong></td>
+          <td class="cost">$12,000 – $20,000</td>
+          <td>Targeted digital asset creator onboarding grants, promotional fee rebates for pilot merchants, and community growth campaigns across Southeast Asia.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGE BREAK FOR CLEAN PRINTING IF NEEDED -->
+  <div class="page-break"></div>
+
+  <!-- PHASE 4 TABLE -->
+  <div class="avoid-break">
+    <h2>
+      <span>Phase 4 • Q2–Q3 2027: B2B PayFi SDK & Regional Expansion</span>
+      <span class="target-tag">Target: $50,000 – $80,000</span>
+    </h2>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 28%;">Cost Item</th>
+          <th style="width: 20%;">Estimated Budget</th>
+          <th>Strategic Growth Justification</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>B2B PayFi SDK & Merchant APIs</strong></td>
+          <td class="cost">$25,000 – $35,000</td>
+          <td>Modular TypeScript/Rust SDKs and REST endpoints enabling external digital storefronts, SaaS platforms, and creator sites to embed ZoniqFi Direct QRIS and Gas Tank checkout natively.</td>
+        </tr>
+        <tr>
+          <td><strong>Regional Merchant BD (Indonesia & SEA)</strong></td>
+          <td class="cost">$15,000 – $25,000</td>
+          <td>Onboarding regional creators, software developers, and digital publishers across Southeast Asian hubs to scale merchant adoption.</td>
+        </tr>
+        <tr>
+          <td><strong>Compliance & Legal Structuring</strong></td>
+          <td class="cost">$10,000 – $20,000</td>
+          <td>Formal legal structuring, utility token classification memorandum, and non-custodial PayFi regulatory advisory across target jurisdictions.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- INVESTOR DUE DILIGENCE DEFENSE -->
+  <div class="avoid-break" style="margin-top: 24px;">
+    <h2>
+      <span>Investor Due Diligence: Hard Questions & Model Defense</span>
+      <span class="target-tag">Executive FAQ</span>
+    </h2>
+
+    <div class="qa-box">
+      <div class="qa-question">Q1: Why does Phase 3 represent over 50% of the aggregate raise?</div>
+      <div class="qa-answer">
+        <strong>Defense:</strong> Phase 3 funds are predominantly <strong>Capital Expenditure (CapEx) rather than operational burn</strong>. Up to 75% of Phase 3 is deployed directly into Protocol-Owned Liquidity (paired in USDC and SOL). This capital never leaves the protocol balance sheet; it stabilizes the token's market floor, supports low-slippage AMM swaps, and generates recurring LP trading fee revenue for the treasury.
+      </div>
+    </div>
+
+    <div class="qa-box">
+      <div class="qa-question">Q2: What strategic moat does the PayFi Gateway add compared to pure DEX competitors?</div>
+      <div class="qa-answer">
+        <strong>Defense:</strong> Standalone AMMs depend entirely on volatile, speculative trading volume. ZoniqFi's PayFi engine connects Solana on-chain liquidity directly to real-world consumer commerce. Customers pay via Direct QRIS (100% fiat received instantly by merchants), while the 5% protocol fee is settled autonomously via the merchant's on-chain SOL Gas Tank and atomically split across 4 protocol vaults (40% Vault, 30% $ZQI Real Yield, 15% Affiliate, 15% Operations). This captures sustainable, non-speculative on-chain fee cashflow regardless of macro market conditions.
+      </div>
+    </div>
+
+    <div class="qa-box">
+      <div class="qa-question">Q3: Why raise a lean $190k–$290k instead of a typical $1.5M+ pre-seed round?</div>
+      <div class="qa-answer">
+        <strong>Defense:</strong> All core modules (Swap, Lock, Vault, Affiliate, and PayFi Gas Tank engine) are already operational and validated on Solana Devnet. Because baseline R&D is completed, we do not require bloated runway. Raising lean capital tied strictly to verifiable milestones minimizes token and equity dilution, maximizing upside for early accelerator backers.
+      </div>
+    </div>
+
+    <div class="qa-box">
+      <div class="qa-question">Q4: How is key mismanagement or "rug-pull" risk mitigated post-funding?</div>
+      <div class="qa-answer">
+        <strong>Defense:</strong> In Phase 2, single-key deployer authority is permanently revoked. Program Upgrade Authority and treasury accounts are transferred to a <strong>3-of-5 Squads v4 Multisig</strong> composed of core developers, investor representatives, and independent technical advisors. No code update, fee redistribution, or liquidity withdrawal can execute unilaterally.
+      </div>
+    </div>
+
+    <div class="qa-box">
+      <div class="qa-question">Q5: How does the protocol sustain runway after Phase 4 without continuous fundraising?</div>
+      <div class="qa-answer">
+        <strong>Defense:</strong> ZoniqFi operates a self-sustaining dual cashflow engine. In addition to the 0.3% flat DEX swap fee (where 15% is routed to operations & treasury), the PayFi engine captures continuous 5% protocol fees in SOL debited from active merchant gas reserves (with an identical 15% dedicated to operations & relayer treasury, representing 0.75% of total gross merchandise volume). This provides recurring, organic cash flow to permanently cover RPC nodes, contract upgrades, and core development without secondary token dilution.
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Footer -->
+  <div class="doc-footer">
+    <div>CONFIDENTIAL — FOR INVESTOR & GRANT EVALUATION PURPOSES ONLY</div>
+    <div>ZoniqFi Protocol Architecture Documentation • 2026</div>
+  </div>
+
+</div>
+
+</body>
+</html>

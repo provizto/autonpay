@@ -1,0 +1,21 @@
+{
+  "short_name": "AutonPay",
+  "name": "AutonPay – Autonomous M2M PayFi Rail",
+  "description": "Autonomous Machine-to-Machine commerce and license settlement protocol on Solana.",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#060a12",
+  "theme_color": "#060a12",
+  "display": "standalone"
+}
