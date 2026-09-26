@@ -1,9 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Connection, 
+  PublicKey, 
+  Transaction, 
+  SystemProgram, 
+  LAMPORTS_PER_SOL 
+} from '@solana/web3.js';
 import { initialProducts } from './data/products';
 import MobileView from './components/MobileView';
+import VendorPortal from './components/vendor/VendorPortal';
+import AdminPortal from './components/admin/AdminPortal';
+
+// ==========================================
+// KONFIGURASI SOLANA DEVNET & WALLET PROTOKOL
+// ==========================================
+const DEVNET_RPC = 'https://api.devnet.solana.com';
+
+// Alamat Default untuk simulasi
+const DEFAULT_ADMIN_WALLET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; 
+const DEFAULT_AFFILIATE_WALLET = 'So11111111111111111111111111111111111111112';
+const DEFAULT_VENDOR_WALLET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 export default function App() {
-  // 0. Deteksi Otomatis Layar Mobile (< 768px)
+  // 0. Deteksi Layar Mobile (< 768px)
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -16,14 +35,16 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [activeTab, setActiveTab] = useState('marketplace'); // 'marketplace' | 'merchant'
-  const [products] = useState(initialProducts);
+  // 3 Tab Navigasi: 'marketplace' | 'vendor' | 'admin'
+  const [activeTab, setActiveTab] = useState('marketplace'); 
+  const [products, setProducts] = useState(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 1. Solana Wallet State (Real Window Injection / Fallback Devnet)
+  // 1. Solana Wallet State
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
+  const [realSolBalance, setRealSolBalance] = useState(null);
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
 
   // 2. State Fitur & Modal
@@ -34,7 +55,7 @@ export default function App() {
   const [verifyResult, setVerifyResult] = useState(null);
   const [sdkSnippetTab, setSdkSnippetTab] = useState('python'); // 'python' | 'json' | 'curl'
 
-  // 3. Autonomous Bot Simulation State
+  // 3. Autonomous Bot State & Telemetry Log
   const [isAutonomous, setIsAutonomous] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([
     { id: 1, time: '00:00:01', type: 'SYS', msg: 'AutonPay PayFi Core Engine Initialized.' },
@@ -42,12 +63,31 @@ export default function App() {
   ]);
   const terminalEndRef = useRef(null);
 
-  // 4. Merchant Dashboard State
+  // 4. Ledger Penjualan (Skema 90% Vendor, 5% Admin, 5% Affiliate)
   const [merchantSales, setMerchantSales] = useState([
-    { id: 'tx-01', time: '09:40:12', sku: 'API-LLM-10M', agent: 'Agent-7X (Bot)', grossSol: 0.05, netSol: 0.0475, feeSol: 0.0025, status: 'Settled' },
-    { id: 'tx-02', time: '09:44:05', sku: 'FEED-SOL-SENTIMENT', agent: 'WhaleTracker_AI', grossSol: 0.025, netSol: 0.02375, feeSol: 0.00125, status: 'Settled' }
+    { 
+      id: 'tx-01', 
+      time: '09:40:12', 
+      sku: 'API-LLM-10M', 
+      agent: 'Agent-7X (Bot)', 
+      grossSol: 0.05, 
+      netVendorSol: 0.045, 
+      adminFeeSol: 0.0025, 
+      affiliateFeeSol: 0.0025, 
+      status: 'Settled' 
+    },
+    { 
+      id: 'tx-02', 
+      time: '09:44:05', 
+      sku: 'FEED-SOL-SENTIMENT', 
+      agent: 'WhaleTracker_AI', 
+      grossSol: 0.025, 
+      netVendorSol: 0.0225, 
+      adminFeeSol: 0.00125, 
+      affiliateFeeSol: 0.00125, 
+      status: 'Settled' 
+    }
   ]);
-  const [claimedEarnings, setClaimedEarnings] = useState(0);
 
   const addLog = (type, msg) => {
     const time = new Date().toLocaleTimeString();
@@ -58,11 +98,33 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
-  // Connect Solana Wallet Real or Devnet Mock
+  // Handler CRUD & Reset Data
+  const handleAddProduct = (newProduct) => {
+    setProducts((prev) => [newProduct, ...prev]);
+    addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
+  };
+
+  const handleDeleteProduct = (productId) => {
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    addLog('SYS', `Product ${productId} removed from catalog.`);
+  };
+
+  const handleResetProducts = () => {
+    setProducts(initialProducts);
+    addLog('SYS', 'Catalog restored to default initial products.');
+  };
+
+  const handleClearSales = () => {
+    setMerchantSales([]);
+    addLog('SYS', 'Settlement ledger history cleared.');
+  };
+
+  // Connect Solana Wallet
   const handleConnectWallet = async () => {
     if (isWalletConnected) {
       setIsWalletConnected(false);
       setWalletAddress('');
+      setRealSolBalance(null);
       addLog('SYS', 'Wallet disconnected.');
       return;
     }
@@ -73,66 +135,171 @@ export default function App() {
         const pub = resp.publicKey.toString();
         setWalletAddress(pub.slice(0, 4) + '...' + pub.slice(-4));
         setIsWalletConnected(true);
-        addLog('NET', `Phantom Wallet connected: ${pub.slice(0, 6)}...`);
+
+        try {
+          const connection = new Connection(DEVNET_RPC, 'confirmed');
+          const bal = await connection.getBalance(resp.publicKey);
+          setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
+          addLog('NET', `Phantom Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
+        } catch {
+          addLog('NET', `Phantom Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
+        }
       } else {
         const mockAddr = 'Sol7' + Math.random().toString(36).substring(2, 6) + '...9dev';
         setWalletAddress(mockAddr);
         setIsWalletConnected(true);
-        addLog('NET', `Solana Devnet Node linked: ${mockAddr}`);
+        addLog('NET', `Solana Devnet Mock Node linked: ${mockAddr}`);
       }
     } catch (err) {
       addLog('ERR', 'Wallet connection rejected: ' + (err.message || 'Cancelled'));
     }
   };
 
-  // Eksekusi Settlement PayFi
-  const executeBuy = (product, isAgentAuto = false) => {
-    if (agentVaultBalance < product.priceSol) {
-      addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
+  // Eksekusi Settlement PayFi (Real Multi-Instruction Split 90 : 5 : 5)
+  const executeBuy = async (product, isAgentAuto = false) => {
+    const gross = product.priceSol;
+    const netVendor = parseFloat((gross * 0.90).toFixed(4));
+    const adminFee = parseFloat((gross * 0.05).toFixed(4));
+    const affiliateCut = parseFloat((gross * 0.05).toFixed(4));
+    const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
+
+    // A. EKSEKUSI OTONOM BOT (Memotong Agent Gas Tank)
+    if (isAgentAuto) {
+      if (agentVaultBalance < gross) {
+        addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
+        return;
+      }
+
+      setActivePurchase(product.id);
+      addLog('BOT', `[M2M Daemon] Auto-purchasing ${product.sku} (${gross} SOL)...`);
+
+      setTimeout(() => {
+        setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
+        setActivePurchase(null);
+
+        addLog('TX', `[90/5/5 Split] Settled! Vendor: +${netVendor} SOL | Admin: +${adminFee} SOL | Affiliate: +${affiliateCut} SOL`);
+        addLog('KEY', `License Emitted: ${generatedKey}`);
+
+        setMerchantSales((prev) => [
+          {
+            id: 'tx-' + Math.random().toString(36).substring(2, 6),
+            time: new Date().toLocaleTimeString(),
+            sku: product.sku,
+            agent: 'AutonomousDaemon_Bot',
+            grossSol: gross,
+            netVendorSol: netVendor,
+            adminFeeSol: adminFee,
+            affiliateFeeSol: affiliateCut,
+            status: 'Settled'
+          },
+          ...prev
+        ]);
+      }, 1000);
       return;
     }
 
+    // B. EKSEKUSI PEMBELIAN MANUAL (On-Chain Devnet Riil via Phantom)
     setActivePurchase(product.id);
-    addLog(isAgentAuto ? 'BOT' : 'M2M', `Initiating atomic settlement for ${product.sku} (${product.priceSol} SOL)...`);
+    addLog('M2M', `Initiating atomic 90/5/5 settlement for ${product.sku} (${gross} SOL)...`);
 
-    setTimeout(() => {
-      const gross = product.priceSol;
-      const net = parseFloat((gross * 0.95).toFixed(4));
-      const fee = parseFloat((gross * 0.05).toFixed(4));
-      const txSig = '5wKz' + Math.random().toString(36).substring(2, 8);
-      const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
+    let txSig = '';
+    let isRealOnChain = false;
 
-      setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
+    try {
+      if (typeof window !== 'undefined' && window.solana?.isPhantom && window.solana.publicKey) {
+        addLog('SYS', 'Awaiting Phantom approval for Devnet transaction...');
+        const connection = new Connection(DEVNET_RPC, 'confirmed');
+        const buyerPubkey = window.solana.publicKey;
+
+        const totalLamports = Math.round(gross * LAMPORTS_PER_SOL);
+        const vendorLamports = Math.floor(totalLamports * 0.90);
+        const adminLamports = Math.floor(totalLamports * 0.05);
+        const affiliateLamports = totalLamports - vendorLamports - adminLamports;
+
+        const targetVendor = new PublicKey(product.vendorWallet || DEFAULT_VENDOR_WALLET);
+        const targetAdmin = new PublicKey(DEFAULT_ADMIN_WALLET);
+        const targetAffiliate = new PublicKey(DEFAULT_AFFILIATE_WALLET);
+
+        const transaction = new Transaction();
+
+        // 1. Transfer 90% ke Vendor
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: buyerPubkey,
+            toPubkey: targetVendor,
+            lamports: vendorLamports,
+          })
+        );
+
+        // 2. Transfer 5% ke Admin Platform
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: buyerPubkey,
+            toPubkey: targetAdmin,
+            lamports: adminLamports,
+          })
+        );
+
+        // 3. Transfer 5% ke Affiliate
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: buyerPubkey,
+            toPubkey: targetAffiliate,
+            lamports: affiliateLamports,
+          })
+        );
+
+        const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+        transaction.feePayer = buyerPubkey;
+
+        const signed = await window.solana.signAndSendTransaction(transaction);
+        txSig = signed.signature;
+        isRealOnChain = true;
+
+        addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
+        await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
+        addLog('NET', `Confirmed on Solana Devnet!`);
+      } else {
+        txSig = '5wKz' + Math.random().toString(36).substring(2, 8) + 'dev';
+        setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
+      }
+
       setActivePurchase(null);
 
-      // Tambahkan ke telemetry
-      addLog('TX', `Settled on Solana! Tx: ${txSig}... | Merchant: +${net} SOL, Protocol: +${fee} SOL`);
+      addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
       addLog('KEY', `License Emitted: ${generatedKey}`);
 
-      // Tambahkan data ke Merchant Revenue Ledger
       setMerchantSales((prev) => [
         {
           id: 'tx-' + Math.random().toString(36).substring(2, 6),
           time: new Date().toLocaleTimeString(),
           sku: product.sku,
-          agent: isAgentAuto ? 'AutonomousDaemon_Bot' : 'Manual_Terminal',
+          agent: 'Manual_Terminal',
           grossSol: gross,
-          netSol: net,
-          feeSol: fee,
+          netVendorSol: netVendor,
+          adminFeeSol: adminFee,
+          affiliateFeeSol: affiliateCut,
           status: 'Settled'
         },
         ...prev
       ]);
 
-      if (!isAgentAuto) {
-        setLicenseModal({
-          product,
-          txSignature: txSig + '...',
-          licenseKey: generatedKey,
-          timestamp: new Date().toLocaleTimeString()
-        });
-      }
-    }, 1100);
+      setLicenseModal({
+        product,
+        txSignature: txSig,
+        isRealOnChain,
+        licenseKey: generatedKey,
+        timestamp: new Date().toLocaleTimeString(),
+        split: { gross, netVendor, adminFee, affiliateCut }
+      });
+
+    } catch (err) {
+      console.error(err);
+      setActivePurchase(null);
+      addLog('ERR', 'Transaction cancelled or failed: ' + (err.message || 'Rejected'));
+      alert('Transaksi Dibatalkan / Gagal: ' + (err.message || 'Koneksi RPC Error'));
+    }
   };
 
   // Autonomous Bot Simulator Loop
@@ -141,6 +308,7 @@ export default function App() {
     if (isAutonomous) {
       addLog('BOT', 'Autonomous Agent Daemon ACTIVE. Monitoring task dependencies...');
       interval = setInterval(() => {
+        if (products.length === 0) return;
         const randomProd = products[Math.floor(Math.random() * products.length)];
         addLog('TRIG', `Task trigger: Quota low for [${randomProd.category}]. Auto-purchasing ${randomProd.sku}...`);
         executeBuy(randomProd, true);
@@ -149,7 +317,7 @@ export default function App() {
       addLog('SYS', 'Autonomous Mode paused.');
     }
     return () => clearInterval(interval);
-  }, [isAutonomous, agentVaultBalance]);
+  }, [isAutonomous, products]);
 
   // Verifikasi Kunci Lisensi
   const handleVerify = (e) => {
@@ -171,18 +339,6 @@ export default function App() {
     }
   };
 
-  // Perhitungan Merchant Revenue
-  const totalMerchantGross = merchantSales.reduce((acc, s) => acc + s.grossSol, 0);
-  const totalMerchantNet = merchantSales.reduce((acc, s) => acc + s.netSol, 0);
-  const totalProtocolCut = merchantSales.reduce((acc, s) => acc + s.feeSol, 0);
-  const claimableRevenue = parseFloat((totalMerchantNet - claimedEarnings).toFixed(4));
-
-  const handleClaimEarnings = () => {
-    if (claimableRevenue <= 0) return;
-    setClaimedEarnings((prev) => parseFloat((prev + claimableRevenue).toFixed(4)));
-    addLog('TX', `Payout: Claimed ${claimableRevenue} SOL to Merchant Settlement Vault.`);
-  };
-
   const categories = ['All', ...new Set(products.map((p) => p.category))];
   const filteredProducts = products.filter((p) => {
     const matchCat = selectedCategory === 'All' || p.category === selectedCategory;
@@ -192,18 +348,22 @@ export default function App() {
     return matchCat && matchSearch;
   });
 
-  // JIKA DIBUKA DI SMARTPHONE / LAYAR KECIL: TAMPILKAN MOBILEVIEW
+  // TAMPILAN SMARTPHONE (< 768px)
   if (isMobile) {
     return (
       <MobileView
         wallet={isWalletConnected ? walletAddress : ''}
         onConnectWallet={handleConnectWallet}
         solPriceUsd={145}
+        isBotRunning={isAutonomous}
+        setIsBotRunning={setIsAutonomous}
+        gasTank={agentVaultBalance}
+        setGasTank={setAgentVaultBalance}
       />
     );
   }
 
-  // TAMPILAN LAPTOP / DESKTOP LENGKAP
+  // TAMPILAN DESKTOP LENGKAP
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
       
@@ -223,9 +383,10 @@ export default function App() {
               <p className="text-[10px] text-slate-400 font-mono">Autonomous Payment Rail</p>
             </div>
 
-            {/* Navigasi Tab */}
+            {/* Navigasi Tab 3 Mode */}
             <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 ml-3 text-xs font-mono">
               <button
+                type="button"
                 onClick={() => setActiveTab('marketplace')}
                 className={`px-3 py-1 rounded-lg transition ${
                   activeTab === 'marketplace' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
@@ -234,12 +395,22 @@ export default function App() {
                 Marketplace
               </button>
               <button
-                onClick={() => setActiveTab('merchant')}
+                type="button"
+                onClick={() => setActiveTab('vendor')}
                 className={`px-3 py-1 rounded-lg transition ${
-                  activeTab === 'merchant' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                  activeTab === 'vendor' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Merchant Portal
+                Vendor Portal
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('admin')}
+                className={`px-3 py-1 rounded-lg transition ${
+                  activeTab === 'admin' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Admin Console
               </button>
             </div>
           </div>
@@ -247,6 +418,7 @@ export default function App() {
           {/* Quick Actions & Wallet */}
           <div className="flex items-center gap-2.5">
             <button
+              type="button"
               onClick={() => { setIsVerifyOpen(true); setVerifyResult(null); }}
               className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5"
             >
@@ -264,6 +436,7 @@ export default function App() {
 
             {/* Connect Wallet Button */}
             <button
+              type="button"
               onClick={handleConnectWallet}
               className={`text-xs font-bold font-mono px-3.5 py-2 rounded-xl border transition flex items-center gap-1.5 ${
                 isWalletConnected
@@ -272,7 +445,11 @@ export default function App() {
               }`}
             >
               <span>{isWalletConnected ? '🟢' : '👛'}</span>
-              <span>{isWalletConnected ? walletAddress : 'Connect Wallet'}</span>
+              <span>
+                {isWalletConnected 
+                  ? `${walletAddress} ${realSolBalance ? `(${realSolBalance} SOL)` : ''}` 
+                  : 'Connect Wallet'}
+              </span>
             </button>
           </div>
 
@@ -291,12 +468,12 @@ export default function App() {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span className="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
-                    Solana Settlement Node Active
+                    Solana Settlement Node Active (Devnet)
                   </span>
                 </div>
                 <h2 className="text-lg font-bold text-white">Machine-to-Machine Commerce Gateway</h2>
                 <p className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                  PayFi rail enabling autonomous AI agents to purchase compute licenses, API credits, and datasets on Solana with zero human intervention.
+                  Automated 90/5/5 PayFi rail enabling AI agents and users to buy compute licenses on Solana Devnet with instant revenue distribution.
                 </p>
               </div>
 
@@ -309,6 +486,7 @@ export default function App() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsAutonomous(!isAutonomous)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition ${
                     isAutonomous ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
@@ -418,6 +596,7 @@ export default function App() {
                     <span>AGENT TELEMETRY LOG</span>
                   </div>
                   <button 
+                    type="button"
                     onClick={() => setTerminalLogs([])}
                     className="text-[10px] text-slate-500 hover:text-slate-300 underline"
                   >
@@ -459,88 +638,26 @@ export default function App() {
           </>
         )}
 
-        {/* VIEW 2: MERCHANT REVENUE PORTAL */}
-        {activeTab === 'merchant' && (
-          <div className="space-y-6">
-            
-            {/* Metrik Pendapatan */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 font-mono">
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                <span className="text-[10px] text-slate-400 uppercase block">Total Gross Inflow</span>
-                <span className="text-xl font-bold text-white mt-1 block">{totalMerchantGross.toFixed(4)} SOL</span>
-                <span className="text-[10px] text-slate-500">From Autonomous Agents</span>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                <span className="text-[10px] text-slate-400 uppercase block">Merchant Net (95%)</span>
-                <span className="text-xl font-bold text-emerald-400 mt-1 block">+{totalMerchantNet.toFixed(4)} SOL</span>
-                <span className="text-[10px] text-emerald-500/80">Direct Revenue</span>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                <span className="text-[10px] text-slate-400 uppercase block">Protocol Split (5%)</span>
-                <span className="text-xl font-bold text-cyan-400 mt-1 block">+{totalProtocolCut.toFixed(4)} SOL</span>
-                <span className="text-[10px] text-cyan-500/80">Autonomous Treasury</span>
-              </div>
-              <div className="bg-slate-900 border border-cyan-800/80 p-4 rounded-2xl flex flex-col justify-between">
-                <div>
-                  <span className="text-[10px] text-cyan-400 uppercase block">Available for Payout</span>
-                  <span className="text-xl font-bold text-white mt-1 block">{claimableRevenue} SOL</span>
-                </div>
-                <button
-                  onClick={handleClaimEarnings}
-                  disabled={claimableRevenue <= 0}
-                  className={`mt-2 py-1.5 px-3 rounded-xl font-bold text-xs transition ${
-                    claimableRevenue > 0
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:opacity-90'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  }`}
-                >
-                  Withdraw to Wallet
-                </button>
-              </div>
-            </div>
+        {/* VIEW 2: VENDOR PORTAL */}
+        {activeTab === 'vendor' && (
+          <VendorPortal
+            vendorWallet={walletAddress}
+            products={products}
+            onAddProduct={handleAddProduct}
+            onDeleteProduct={handleDeleteProduct}
+            sales={merchantSales}
+          />
+        )}
 
-            {/* Riwayat Penjualan M2M */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="font-bold text-sm font-mono text-white flex items-center gap-2">
-                  <span>📊</span> <span>M2M AGENT SETTLEMENT LEDGER</span>
-                </h3>
-                <span className="text-[11px] font-mono text-slate-500">{merchantSales.length} Total Settlements</span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-slate-800 text-slate-400">
-                      <th className="pb-3">Timestamp</th>
-                      <th className="pb-3">Asset SKU</th>
-                      <th className="pb-3">Purchaser Entity</th>
-                      <th className="pb-3">Gross</th>
-                      <th className="pb-3">Net (95%)</th>
-                      <th className="pb-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {merchantSales.map((sale) => (
-                      <tr key={sale.id} className="hover:bg-slate-800/40">
-                        <td className="py-2.5 text-slate-400">{sale.time}</td>
-                        <td className="py-2.5 text-cyan-300 font-bold">{sale.sku}</td>
-                        <td className="py-2.5 text-slate-300">{sale.agent}</td>
-                        <td className="py-2.5 text-white">{sale.grossSol} SOL</td>
-                        <td className="py-2.5 text-emerald-400 font-bold">+{sale.netSol} SOL</td>
-                        <td className="py-2.5">
-                          <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded text-[10px]">
-                            {sale.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
+        {/* VIEW 3: ADMIN CONSOLE */}
+        {activeTab === 'admin' && (
+          <AdminPortal 
+            sales={merchantSales}
+            onClearSales={handleClearSales}
+            products={products}
+            onDeleteProduct={handleDeleteProduct}
+            onResetProducts={handleResetProducts}
+          />
         )}
 
       </main>
@@ -551,7 +668,7 @@ export default function App() {
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
             <div className="flex items-center gap-2 text-emerald-400 font-bold font-mono text-sm">
               <span>✅</span>
-              <span>AUTONPAY SETTLEMENT CONFIRMED</span>
+              <span>AUTONPAY ON-CHAIN SETTLEMENT CONFIRMED</span>
             </div>
 
             {/* Detail Struk */}
@@ -561,12 +678,27 @@ export default function App() {
                 <span className="text-white font-bold">{licenseModal.product.title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Settled:</span>
-                <span className="text-cyan-400 font-bold">{licenseModal.product.priceSol} SOL (~400ms)</span>
+                <span className="text-slate-500">Total Settled:</span>
+                <span className="text-cyan-400 font-bold">{licenseModal.product.priceSol} SOL</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-[11px] text-slate-400 border-t border-slate-800/80 pt-1 mt-1">
+                <span>Distribution:</span>
+                <span>Vendor: 90% | Admin: 5% | Affiliate: 5%</span>
+              </div>
+              <div className="flex justify-between items-center pt-1">
                 <span className="text-slate-500">Tx Signature:</span>
-                <span className="text-slate-400">{licenseModal.txSignature}</span>
+                {licenseModal.isRealOnChain ? (
+                  <a 
+                    href={`https://solscan.io/tx/${licenseModal.txSignature}?cluster=devnet`}
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-cyan-400 underline font-bold hover:text-cyan-300"
+                  >
+                    {licenseModal.txSignature.slice(0, 12)}... (View Solscan)
+                  </a>
+                ) : (
+                  <span className="text-slate-400">{licenseModal.txSignature}</span>
+                )}
               </div>
               <div className="pt-1.5 border-t border-slate-800">
                 <span className="text-slate-500 block mb-1">Assigned License Key:</span>
@@ -584,6 +716,7 @@ export default function App() {
                   {['python', 'json', 'curl'].map((t) => (
                     <button
                       key={t}
+                      type="button"
                       onClick={() => setSdkSnippetTab(t)}
                       className={`px-2 py-0.5 rounded uppercase text-[10px] font-mono transition ${
                         sdkSnippetTab === t 
@@ -613,6 +746,7 @@ JSON.stringify({
   license_key: licenseModal.licenseKey,
   sku: licenseModal.product.sku,
   network: "solana-devnet",
+  split: "90_vendor_5_admin_5_affiliate",
   endpoint: (licenseModal.product.instantAccessUrl || '').replace('agentpay', 'autonpay'),
   status: "ACTIVE"
 }, null, 2)
@@ -627,6 +761,7 @@ JSON.stringify({
             </div>
 
             <button
+              type="button"
               onClick={() => setLicenseModal(null)}
               className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl transition font-mono"
             >
@@ -645,7 +780,13 @@ JSON.stringify({
                 <span>🔍</span>
                 <span>VERIFY ON-CHAIN LICENSE</span>
               </div>
-              <button onClick={() => setIsVerifyOpen(false)} className="text-slate-500 hover:text-white">✕</button>
+              <button 
+                type="button" 
+                onClick={() => setIsVerifyOpen(false)} 
+                className="text-slate-500 hover:text-white"
+              >
+                ✕
+              </button>
             </div>
 
             <form onSubmit={handleVerify} className="space-y-3">

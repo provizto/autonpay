@@ -12,17 +12,22 @@ export const connection = new Connection(
   'confirmed'
 );
 
-// Wallet Penampung Protocol Vault (5% Fee)
-const PROTOCOL_VAULT = 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny';
+// Wallet Penampung Platform / Admin (Ganti jika ada wallet khusus)
+const PROTOCOL_ADMIN_VAULT = 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny';
+
+// Wallet Fallback untuk Affiliate jika pembeli tidak membawa kode referral
+const DEFAULT_AFFILIATE_VAULT = 'H8XSVM7UDZbk5eFhzWMLU5WPKZwNLBo85wGbrfPDX6Gw';
 
 /**
- * Eksekusi Pembelian On-Chain Riil:
- * - 95% SOL langsung masuk ke dompet Merchant/Vendor
- * - 5% SOL otomatis masuk ke Vault Protokol
+ * Eksekusi Pembelian On-Chain Riil (Devnet):
+ * - 90% SOL langsung masuk ke dompet Vendor
+ * - 5% SOL masuk ke Platform Admin
+ * - 5% SOL masuk ke Affiliate / Referral Partner
  */
 export async function executePayFiPurchase({
   wallet,
   vendorAddress,
+  affiliateAddress = null,
   priceSol,
   productSku
 }) {
@@ -31,34 +36,55 @@ export async function executePayFiPurchase({
   }
 
   const buyerPubkey = new PublicKey(wallet.publicKey);
-  const vendorPubkey = new PublicKey(vendorAddress || PROTOCOL_VAULT);
-  const vaultPubkey = new PublicKey(PROTOCOL_VAULT);
+  const vendorPubkey = new PublicKey(vendorAddress || PROTOCOL_ADMIN_VAULT);
+  const adminPubkey = new PublicKey(PROTOCOL_ADMIN_VAULT);
+  
+  // Tentukan target affiliate (jika tidak ada ref, masuk ke admin atau fallback pool)
+  let affiliatePubkey = adminPubkey;
+  if (affiliateAddress) {
+    try {
+      affiliatePubkey = new PublicKey(affiliateAddress);
+    } catch {
+      affiliatePubkey = adminPubkey;
+    }
+  }
 
   // 1. Konversi SOL ke Lamports (1 SOL = 1.000.000.000 Lamports)
   const totalLamports = Math.round(Number(priceSol) * LAMPORTS_PER_SOL);
   if (totalLamports <= 0) throw new Error('Nominal harga tidak valid.');
 
-  const merchantLamports = Math.floor(totalLamports * 0.95);
-  const vaultLamports = totalLamports - merchantLamports;
+  // Kalkulasi Split 90% : 5% : 5%
+  const vendorLamports = Math.floor(totalLamports * 0.90);
+  const adminLamports = Math.floor(totalLamports * 0.05);
+  const affiliateLamports = totalLamports - vendorLamports - adminLamports; // Sisa persis 5%
 
-  // 2. Buat transaksi atomik 2 instruksi
+  // 2. Buat transaksi multi-instruksi atomik
   const transaction = new Transaction();
 
-  // Instruksi A: 95% ke Vendor
+  // Instruksi 1: 90% ke Vendor
   transaction.add(
     SystemProgram.transfer({
       fromPubkey: buyerPubkey,
       toPubkey: vendorPubkey,
-      lamports: merchantLamports,
+      lamports: vendorLamports,
     })
   );
 
-  // Instruksi B: 5% ke Protocol Vault
+  // Instruksi 2: 5% ke Protocol Admin
   transaction.add(
     SystemProgram.transfer({
       fromPubkey: buyerPubkey,
-      toPubkey: vaultPubkey,
-      lamports: vaultLamports,
+      toPubkey: adminPubkey,
+      lamports: adminLamports,
+    })
+  );
+
+  // Instruksi 3: 5% ke Affiliate
+  transaction.add(
+    SystemProgram.transfer({
+      fromPubkey: buyerPubkey,
+      toPubkey: affiliatePubkey,
+      lamports: affiliateLamports,
     })
   );
 
@@ -91,9 +117,10 @@ export async function executePayFiPurchase({
 
   return {
     signature,
-    explorerUrl: `https://explorer.solana.com/tx/${signature}?cluster=devnet`,
-    merchantCut: merchantLamports / LAMPORTS_PER_SOL,
-    vaultCut: vaultLamports / LAMPORTS_PER_SOL,
+    explorerUrl: `https://solscan.io/tx/${signature}?cluster=devnet`,
+    merchantCut: (vendorLamports / LAMPORTS_PER_SOL).toFixed(4),
+    adminCut: (adminLamports / LAMPORTS_PER_SOL).toFixed(4),
+    affiliateCut: (affiliateLamports / LAMPORTS_PER_SOL).toFixed(4),
     sku: productSku
   };
 }

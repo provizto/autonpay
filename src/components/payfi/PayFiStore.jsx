@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { executePayFiPurchase } from '../../utils/solanaPay';
+import { executePayFiPayment } from '../../services/payfiService';
 
 const DEFAULT_PRODUCTS = [
   {
@@ -30,7 +30,7 @@ const DEFAULT_PRODUCTS = [
   }
 ];
 
-export default function PayFiStore({ solPriceUsd = 145 }) {
+export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null }) {
   const { publicKey, sendTransaction, connected } = useWallet();
   const { setVisible: openWalletModal } = useWalletModal();
 
@@ -43,27 +43,36 @@ export default function PayFiStore({ solPriceUsd = 145 }) {
     setErrorMsg(null);
     setTxResult(null);
 
+    // 1. Cek koneksi wallet
     if (!connected || !publicKey) {
-      openWalletModal(true);
+      if (openWalletModal) {
+        openWalletModal(true);
+      } else {
+        alert('Silakan hubungkan dompet Phantom Devnet Anda terlebih dahulu!');
+      }
       return;
     }
 
     try {
       setLoadingSku(product.sku);
 
-      const res = await executePayFiPurchase({
+      // 2. Eksekusi Pembayaran On-Chain Atomik 90/5/5
+      const res = await executePayFiPayment({
         wallet: { publicKey, sendTransaction },
         vendorAddress: product.vendorWallet,
-        priceSol: product.priceSol,
-        productSku: product.sku
+        affiliateAddress: affiliateAddress,
+        amountSol: parseFloat(product.priceSol),
+        licenseId: `AUTON-${product.sku}-${Date.now().toString().slice(-4)}`,
+        productTitle: product.title
       });
 
       setTxResult({
         ...res,
-        productTitle: product.title
+        productTitle: product.title,
+        priceSol: product.priceSol
       });
     } catch (err) {
-      console.error(err);
+      console.error('PayFi Purchase Error:', err);
       setErrorMsg(err.message || 'Transaksi dibatalkan atau Devnet SOL tidak mencukupi.');
     } finally {
       setLoadingSku(null);
@@ -78,7 +87,7 @@ export default function PayFiStore({ solPriceUsd = 145 }) {
   return (
     <div className="w-full space-y-3 font-sans pb-8">
       
-      {/* Search Input Ramping */}
+      {/* Search Input */}
       <div className="bg-[#0b1329] border border-slate-800 rounded-xl px-3 py-2 flex items-center gap-2">
         <span className="text-cyan-400 text-xs">🔍</span>
         <input
@@ -90,28 +99,43 @@ export default function PayFiStore({ solPriceUsd = 145 }) {
         />
       </div>
 
-      {/* Banner Status Transaksi Riil */}
+      {/* Banner Error */}
       {errorMsg && (
         <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-xs text-red-300">
           ⚠️ {errorMsg}
         </div>
       )}
 
+      {/* Kuitansi Sukses On-Chain */}
       {txResult && (
-        <div className="p-3.5 bg-emerald-950/70 border border-emerald-700/80 rounded-xl text-xs text-emerald-300 space-y-1.5 shadow-lg">
-          <div className="font-bold flex items-center gap-1.5 text-emerald-400">
-            <span>✅</span> Transaksi On-Chain Berhasil!
+        <div className="p-3.5 bg-emerald-950/70 border border-emerald-700/80 rounded-xl text-xs text-emerald-300 space-y-2 shadow-lg font-mono">
+          <div className="font-bold flex items-center justify-between text-emerald-400">
+            <span className="flex items-center gap-1.5">
+              <span>✅</span> Settlement On-Chain Berhasil!
+            </span>
+            <span className="text-[10px] bg-emerald-900/60 border border-emerald-700 px-1.5 py-0.5 rounded">
+              Devnet
+            </span>
           </div>
-          <div className="text-[11px] text-slate-300">
-            Lisensi <strong>{txResult.productTitle}</strong> telah aktif. Split 95% vendor & 5% vault terkirim.
+          
+          <div className="text-[11px] text-slate-300 leading-relaxed font-sans">
+            Lisensi <strong>{txResult.productTitle}</strong> berhasil diterbitkan.
           </div>
+
+          <div className="bg-[#060a12] p-2 rounded-lg border border-emerald-900/60 text-[10px] text-slate-400 space-y-0.5">
+            <div className="text-cyan-300 font-bold">Split Atomik 90 / 5 / 5:</div>
+            <div>• Vendor (90%): +{(txResult.priceSol * 0.9).toFixed(4)} SOL</div>
+            <div>• Platform Fee (5%): +{(txResult.priceSol * 0.05).toFixed(4)} SOL</div>
+            <div>• Affiliate Split (5%): +{(txResult.priceSol * 0.05).toFixed(4)} SOL</div>
+          </div>
+
           <a
             href={txResult.explorerUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-block text-[11px] text-cyan-400 font-mono underline hover:text-cyan-300 pt-1"
+            className="inline-block text-[11px] text-cyan-400 underline hover:text-cyan-300 pt-0.5"
           >
-            Lihat Bukti Transaksi di Solana Explorer ↗
+            Lihat Bukti Transaksi di Solscan Devnet ↗
           </a>
         </div>
       )}
@@ -124,7 +148,7 @@ export default function PayFiStore({ solPriceUsd = 145 }) {
         <span className="font-mono text-[10px]">{filtered.length} Active Items</span>
       </div>
 
-      {/* Baris Produk Mungil Horizontal */}
+      {/* Baris Produk */}
       <div className="space-y-2">
         {filtered.map((item) => {
           const isLoading = loadingSku === item.sku;

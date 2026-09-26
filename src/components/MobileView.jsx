@@ -5,18 +5,33 @@ export default function MobileView({
   wallet,
   onConnectWallet,
   solPriceUsd = 145,
+  // Props penghubung agar sinkron dengan Laptop (opsional, otomatis fallback ke lokal)
+  isBotRunning: externalIsBotRunning,
+  setIsBotRunning: externalSetIsBotRunning,
+  gasTank: externalGasTank,
+  setGasTank: externalSetGasTank,
+  botLogs: externalBotLogs,
+  setBotLogs: externalSetBotLogs,
 }) {
   // Hanya 2 Tab Utama: 'MARKET' atau 'BOT'
   const [currentTab, setCurrentTab] = useState('MARKET');
   
-  // Status AI Agent Bot
-  const [isBotRunning, setIsBotRunning] = useState(false);
-  const [gasTank, setGasTank] = useState(1.500);
-  const [botLogs, setBotLogs] = useState([
+  // Status AI Agent Bot (Sinkron dengan Parent jika dioper, atau pakai State Lokal)
+  const [localIsBotRunning, setLocalIsBotRunning] = useState(false);
+  const isBotRunning = externalIsBotRunning !== undefined ? externalIsBotRunning : localIsBotRunning;
+  const setIsBotRunning = externalSetIsBotRunning || setLocalIsBotRunning;
+
+  const [localGasTank, setLocalGasTank] = useState(1.500);
+  const gasTank = externalGasTank !== undefined ? externalGasTank : localGasTank;
+  const setGasTank = externalSetGasTank || setLocalGasTank;
+
+  const [localBotLogs, setLocalBotLogs] = useState([
     { time: '12:00:01', tag: 'SYS', msg: 'AutonPay M2M Settlement Rail initialized.' },
     { time: '12:00:02', tag: 'NET', msg: 'Connected to Solana Devnet Gateway.' },
     { time: '12:00:03', tag: 'CONF', msg: 'Payout split configured: Vendor 90% | Admin 5% | Affiliate 5%.' }
   ]);
+  const botLogs = externalBotLogs !== undefined ? externalBotLogs : localBotLogs;
+  const setBotLogs = externalSetBotLogs || setLocalBotLogs;
 
   // Modal Verifikasi Kunci Lisensi
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -77,7 +92,7 @@ export default function MobileView({
       <div className="w-full max-w-md min-h-screen px-3.5 pt-3 pb-20 flex flex-col justify-between box-border">
         
         {/* ======================================================== */}
-        {/* 1. HEADER RINGKAS & SEIMBANG                              */}
+        {/* 1. HEADER RINGKAS & SEIMBANG                             */}
         {/* ======================================================== */}
         <div className="w-full mb-3 space-y-2.5">
           
@@ -279,7 +294,7 @@ export default function MobileView({
         </div>
 
         {/* ======================================================== */}
-        {/* 3. MODAL VERIFIKASI LISENSI                             */}
+        {/* 3. MODAL VERIFIKASI LISENSI                              */}
         {/* ======================================================== */}
         {showVerifyModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
