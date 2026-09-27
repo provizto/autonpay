@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PayFiStore from './payfi/PayFiStore';
 import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
 import AutonPayLogo from './AutonPayLogo';
@@ -16,23 +15,21 @@ export default function MobileView({
   botLogs: externalBotLogs,
   setBotLogs: externalSetBotLogs,
   logs: externalLogs,
-  // Catalog, CRUD & Settlement Ledger Data
   products = [],
   onAddProduct,
-  onUpdateProduct, // Received from App.jsx for editing products
+  onUpdateProduct,
   onDeleteProduct,
   onResetProducts,
   merchantSales = [],
   onClearSales,
-  onBuyProduct, // Triggers manual on-chain purchase & Solscan receipt modal
+  onBuyProduct,
 }) {
   // 4 Mobile Navigation Tabs: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
   const [currentTab, setCurrentTab] = useState('MARKET');
   
-  // Safe wallet address normalization (string or object)
   const walletAddress = typeof wallet === 'string' ? wallet : wallet?.address;
 
-  // Autonomous Agent States & Single-Source-of-Truth Fallbacks
+  // Autonomous Agent States
   const [localIsBotRunning, setLocalIsBotRunning] = useState(false);
   const isBotRunning = externalIsBotRunning !== undefined ? externalIsBotRunning : localIsBotRunning;
   const setIsBotRunning = externalSetIsBotRunning || setLocalIsBotRunning;
@@ -64,13 +61,13 @@ export default function MobileView({
     ]);
   };
 
-  // M2M Autonomous Purchasing Simulation (Runs only when not managed by App.jsx)
+  // M2M Autonomous Purchasing Simulation
   useEffect(() => {
     let interval = null;
     if (isBotRunning && !externalBotLogs) {
       interval = setInterval(() => {
         const time = new Date().toLocaleTimeString('en-US');
-        const price = 0.050; // 0.05 SOL
+        const price = 0.050;
 
         setGasTank((prev) => {
           if (prev < price) {
@@ -134,7 +131,6 @@ export default function MobileView({
           <div className="flex items-center justify-between gap-2">
             <AutonPayLogo size={32} withText={true} />
 
-            {/* Wallet Pill */}
             <button
               type="button"
               onClick={onConnectWallet}
@@ -245,68 +241,59 @@ export default function MobileView({
         {/* ======================================================== */}
         <div className="flex-1 w-full mt-1">
           
-          {/* --- TAB 1: MARKETPLACE & MANUAL COMPUTE PURCHASES --- */}
+          {/* --- TAB 1: SINGLE STREAMLINED MARKETPLACE LIST (100% BEBAS DOBEL) --- */}
           {currentTab === 'MARKET' && (
-            <div className="w-full space-y-3.5">
-              <PayFiStore 
-                solPriceUsd={solPriceUsd} 
-                products={products}
-                onBuyProduct={onBuyProduct}
-                walletAddress={walletAddress}
-                onConnectWallet={onConnectWallet}
-              />
+            <div className="w-full space-y-2 pb-4">
+              <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 px-1 pb-1">
+                <span>AVAILABLE COMPUTE LICENSES</span>
+                <span className="text-[10px] text-cyan-400">90/5/5 Split Rail</span>
+              </div>
 
-              {/* Mobile Manual Buy Catalog */}
-              {products && products.length > 0 && (
-                <div className="space-y-2.5 pt-1">
-                  <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 px-1">
-                    <span>AVAILABLE COMPUTE LICENSES</span>
-                    <span className="text-[10px] text-cyan-400">90/5/5 Split Rail</span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {products.map((prod) => (
-                      <div
-                        key={prod.id}
-                        className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between gap-3 shadow-md hover:border-cyan-500/40 transition"
-                      >
-                        <div>
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className="text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
-                              {prod.sku}
-                            </span>
-                            <span className="text-[10px] font-mono text-slate-500">
-                              Seller: {prod.seller || 'Verified'}
-                            </span>
-                          </div>
-                          <h3 className="font-bold text-white text-xs leading-snug">{prod.title}</h3>
-                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
-                            {prod.description}
-                          </p>
-                        </div>
-
-                        <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
-                          <div>
-                            <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
-                            <span className="text-sm font-extrabold text-cyan-400 font-mono">
-                              {prod.priceSol} SOL
-                            </span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => onBuyProduct && onBuyProduct(prod)}
-                            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white font-mono font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 transition"
-                          >
-                            <span>⚡</span>
-                            <span>Buy License</span>
-                          </button>
+              {products.map((p) => {
+                const usdValue = (p.priceSol * solPriceUsd).toFixed(2);
+                return (
+                  <div
+                    key={p.id}
+                    className="bg-[#0b1222] border border-slate-800/80 hover:border-cyan-500/40 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition"
+                  >
+                    {/* Info Produk */}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shrink-0">
+                        📦
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-white truncate leading-snug">
+                          {p.title}
+                        </h4>
+                        <div className="text-[10px] text-slate-500 font-mono truncate">
+                          {p.category} • {p.sku}
                         </div>
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Harga & Tombol Beli */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="text-right font-mono">
+                        <div className="text-xs font-bold text-cyan-400">
+                          {p.priceSol} SOL
+                        </div>
+                        <div className="text-[9px] text-slate-500">
+                          ≈ ${usdValue}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => onBuyProduct?.(p)}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white font-mono font-bold text-xs px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow"
+                      >
+                        <span>⚡</span>
+                        <span>Buy</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
 
@@ -409,7 +396,7 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 3: VENDOR PORTAL (WALLET RESTRICTED + SUPPORTS EDIT) --- */}
+          {/* --- TAB 3: VENDOR PORTAL --- */}
           {currentTab === 'VENDOR' && (
             <div className="w-full">
               {!walletAddress ? (
@@ -438,7 +425,7 @@ export default function MobileView({
                   vendorWallet={walletAddress}
                   products={products}
                   onAddProduct={onAddProduct}
-                  onUpdateProduct={onUpdateProduct} // <-- Passed here to allow editing
+                  onUpdateProduct={onUpdateProduct}
                   onDeleteProduct={onDeleteProduct}
                   sales={merchantSales}
                 />
@@ -446,7 +433,7 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 4: ADMIN CONSOLE (WALLET RESTRICTED) --- */}
+          {/* --- TAB 4: ADMIN CONSOLE --- */}
           {currentTab === 'ADMIN' && (
             <div className="w-full">
               {!walletAddress ? (
@@ -485,7 +472,7 @@ export default function MobileView({
         </div>
 
         {/* ======================================================== */}
-        {/* 3. VERIFY LICENSE MODAL (REAL SUPABASE DB CHECK)          */}
+        {/* 3. VERIFY LICENSE MODAL                                  */}
         {/* ======================================================== */}
         {showVerifyModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">

@@ -90,23 +90,27 @@ export default function App() {
     addLog('SYS', 'Agent Gas Tank refilled (+1.000 Devnet SOL).');
   };
 
-  const formatSettlementItem = (item) => ({
-    id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
-    time: item.created_at 
-      ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      : new Date().toLocaleTimeString('en-US'),
-    sku: item.sku || 'N/A',
-    agent: item.buyer_wallet 
-      ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)}` 
-      : 'Agent-Daemon',
-    grossSol: Number(item.gross_sol) || 0,
-    netVendorSol: Number(item.vendor_sol) || 0,
-    adminFeeSol: Number(item.admin_sol) || 0,
-    affiliateFeeSol: Number(item.affiliate_sol) || 0,
-    status: item.status || 'Settled',
-    txSignature: item.tx_signature,
-    licenseKey: item.license_key
-  });
+  const formatSettlementItem = (item) => {
+    const sig = item.tx_signature || item.signature || item.txSignature;
+    return {
+      id: item.id ? `db-${item.id}` : (sig || Math.random().toString()),
+      time: item.created_at 
+        ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        : new Date().toLocaleTimeString('en-US'),
+      sku: item.sku || 'N/A',
+      agent: item.buyer_wallet 
+        ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)}` 
+        : 'Agent-Daemon',
+      grossSol: Number(item.gross_sol) || 0,
+      netVendorSol: Number(item.vendor_sol) || 0,
+      adminFeeSol: Number(item.admin_sol) || 0,
+      affiliateFeeSol: Number(item.affiliate_sol) || 0,
+      status: item.status || 'Settled',
+      signature: sig,
+      txSignature: sig,
+      licenseKey: item.license_key
+    };
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -120,7 +124,7 @@ export default function App() {
 
     const unsubscribe = subscribeToLiveSettlements((newRecord) => {
       const formatted = formatSettlementItem(newRecord);
-      setMerchantSales((prev) => [formatted, ...prev]);
+      setMerchantSales((prev) => [formatted, ...prev.filter(s => s.signature !== formatted.signature)]);
       addLog('NET', `[Realtime Inflow] New on-chain settlement: ${newRecord.sku} (+${newRecord.gross_sol} SOL)`);
     });
 
@@ -129,7 +133,7 @@ export default function App() {
     };
   }, []);
 
-  // CRUD Product Handlers (Add, Update, Delete, Reset)
+  // CRUD Product Handlers
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
@@ -215,7 +219,6 @@ export default function App() {
     let isRealOnChain = false;
 
     try {
-      // 1. Eksekusi On-Chain Riil jika ada dompet Phantom / Devnet terhubung
       if (hasWallet && !isAgentAuto) {
         addLog('SYS', 'Awaiting wallet signature for Solana Devnet...');
         const connection = new Connection(DEVNET_RPC, 'confirmed');
@@ -244,9 +247,7 @@ export default function App() {
         addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
         addLog('NET', `Confirmed on Solana Devnet! Hash: ${txSig}`);
-      } 
-      // 2. Eksekusi Simulasi Gas Tank (Untuk Bot & Pembelian Manual di Browser HP tanpa Web3 Extension)
-      else {
+      } else {
         if (agentVaultBalance < gross) {
           addLog('ERR', `Settlement aborted: Insufficient Agent Gas Tank for ${product.sku}. Click (+Refill) in the header.`);
           setActivePurchase(null);
@@ -261,6 +262,23 @@ export default function App() {
       setActivePurchase(null);
       addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
       addLog('KEY', `License Issued: ${generatedKey}`);
+
+      // Catat langsung ke state tabel Admin secara instan
+      const newSaleItem = {
+        id: 'tx-' + Math.random().toString(36).substring(2, 6),
+        time: new Date().toLocaleTimeString('en-US'),
+        sku: product.sku,
+        agent: isAgentAuto ? 'AutonomousDaemon_Bot' : (walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Manual_Terminal'),
+        grossSol: gross,
+        netVendorSol: netVendor,
+        adminFeeSol: adminFee,
+        affiliateFeeSol: affiliateCut,
+        status: 'Settled',
+        signature: txSig,
+        txSignature: txSig,
+        licenseKey: generatedKey
+      };
+      setMerchantSales((prev) => [newSaleItem, ...prev]);
 
       // Simpan catatan ke database Supabase
       try {
@@ -282,7 +300,6 @@ export default function App() {
         console.warn('DB recording skipped:', dbErr);
       }
 
-      // KUNCI: HANYA MUNCULKAN POP-UP MODAL JIKA DIKLIK MANUAL
       if (!isAgentAuto) {
         setLicenseModal({
           product,
@@ -413,10 +430,9 @@ export default function App() {
                   <span>🔍</span> <span>Verify Key</span>
                 </button>
 
-                {/* Agent Gas Tank Indicator + Refill Button */}
                 <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
                   <button 
-                    type="button"
+                    type="button" 
                     onClick={handleRefillGas}
                     className="text-xs hover:scale-110 active:scale-95 transition"
                     title="Click to Refill Tank (+1.0 SOL)"
@@ -689,7 +705,7 @@ export default function App() {
         </>
       )}
 
-      {/* 3. SETTLEMENT RECEIPT MODAL (DILENGKAPI TOMBOL BUKA LINK DRIVE & DOWNLOAD JSON) */}
+      {/* 3. SETTLEMENT RECEIPT MODAL */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
@@ -698,7 +714,6 @@ export default function App() {
               <span>AUTONPAY ON-CHAIN SETTLEMENT CONFIRMED</span>
             </div>
 
-            {/* Rincian Struk */}
             <div className="space-y-1.5 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono">
               <div className="flex justify-between">
                 <span className="text-slate-500">Asset:</span>
@@ -713,7 +728,6 @@ export default function App() {
                 <span>Vendor: 90% | Admin: 5% | Affiliate: 5%</span>
               </div>
               
-              {/* LINK PRODUK / GOOGLE DRIVE DARI VENDOR */}
               <div className="flex justify-between items-center pt-1">
                 <span className="text-slate-500">Product Link:</span>
                 {licenseModal.product.instantAccessUrl ? (
@@ -803,9 +817,7 @@ JSON.stringify({
               </pre>
             </div>
 
-            {/* TOMBOL AKSI: BUKA LINK LANGSUNG + DOWNLOAD JSON + CLOSE */}
             <div className="flex flex-wrap gap-2 pt-1 font-mono">
-              {/* Tombol Buka Link Google Drive / File langsung */}
               {licenseModal.product.instantAccessUrl && (
                 <a
                   href={licenseModal.product.instantAccessUrl}
@@ -817,7 +829,6 @@ JSON.stringify({
                 </a>
               )}
 
-              {/* Tombol Download JSON (sudah termasuk link produk di dalamnya) */}
               <button
                 type="button"
                 onClick={() => {
@@ -827,7 +838,7 @@ JSON.stringify({
                     sku: licenseModal.product.sku,
                     product: licenseModal.product.title,
                     price_sol: licenseModal.product.priceSol,
-                    product_link: licenseModal.product.instantAccessUrl || "N/A", // <--- LINK PRODUK DISERTAKAN DI JSON
+                    product_link: licenseModal.product.instantAccessUrl || "N/A",
                     settlement_tx: licenseModal.txSignature,
                     network: "solana-devnet",
                     distribution: "90% Vendor | 5% Admin | 5% Affiliate",
