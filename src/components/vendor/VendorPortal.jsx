@@ -38,7 +38,7 @@ export default function VendorPortal({
         category: formData.category,
         priceSol: parseFloat(formData.priceSol),
         seller: vendorWallet ? `${vendorWallet.slice(0, 4)}...${vendorWallet.slice(-4)}` : 'Vendor-Node',
-        vendorWallet: vendorWallet || 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny',
+        vendorWallet: vendorWallet || '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB',
         instantAccessUrl: formData.instantAccessUrl || 'https://api.autonpay.network/v1/auth',
         description: formData.description || 'API pass for autonomous agents.'
       };

@@ -11,15 +11,23 @@ import MobileView from './components/MobileView';
 import VendorPortal from './components/vendor/VendorPortal';
 import AdminPortal from './components/admin/AdminPortal';
 import AutonPayLogo from './components/AutonPayLogo';
+import { executePayFiPayment } from './services/payfiService';
+import { fetchSettlements } from './services/settlements';
 
 // ==========================================
 // SOLANA DEVNET & PROTOCOL WALLET CONFIG
 // ==========================================
 const DEVNET_RPC = 'https://api.devnet.solana.com';
 
-const DEFAULT_ADMIN_WALLET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; 
-const DEFAULT_AFFILIATE_WALLET = 'So11111111111111111111111111111111111111112';
-const DEFAULT_VENDOR_WALLET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'; 
+const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
+const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
+
+// Helper deteksi otomatis dompet apa saja (Phantom, Solflare, Backpack, MetaMask Snap)
+const getSolanaProvider = () => {
+  if (typeof window === 'undefined') return null;
+  return window.phantom?.solana || window.solflare || window.backpack || window.solana || null;
+};
 
 export default function App() {
   // 0. Mobile Screen Detection (< 768px)
@@ -98,6 +106,41 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
+  // 5. Sync Live Settlements from Supabase Database on Mount
+  useEffect(() => {
+    async function loadSupabaseSettlements() {
+      try {
+        const liveData = await fetchSettlements();
+        if (liveData && liveData.length > 0) {
+          const formatted = liveData.map((item) => ({
+            id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
+            time: item.created_at 
+              ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              : new Date().toLocaleTimeString('en-US'),
+            sku: item.sku || 'N/A',
+            agent: item.buyer_wallet 
+              ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)} (Bot)` 
+              : 'Agent-Daemon',
+            grossSol: Number(item.gross_sol) || 0,
+            netVendorSol: Number(item.vendor_sol) || 0,
+            adminFeeSol: Number(item.admin_sol) || 0,
+            affiliateFeeSol: Number(item.affiliate_sol) || 0,
+            status: item.status || 'Settled',
+            txSignature: item.tx_signature,
+            licenseKey: item.license_key
+          }));
+
+          setMerchantSales(formatted);
+          addLog('SYS', `Synced ${formatted.length} on-chain settlements from Supabase.`);
+        }
+      } catch (err) {
+        console.error('Failed to load settlements from Supabase:', err);
+      }
+    }
+
+    loadSupabaseSettlements();
+  }, []);
+
   // CRUD Handlers & Reset
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
@@ -119,9 +162,14 @@ export default function App() {
     addLog('SYS', 'Settlement ledger history cleared.');
   };
 
-  // Connect Solana Wallet
+  // Connect Solana Wallet (Phantom / Solflare / Backpack / MetaMask)
   const handleConnectWallet = async () => {
+    const provider = getSolanaProvider();
+
     if (isWalletConnected) {
+      if (provider?.disconnect) {
+        try { await provider.disconnect(); } catch (e) {}
+      }
       setIsWalletConnected(false);
       setWalletAddress('');
       setRealSolBalance(null);
@@ -130,19 +178,21 @@ export default function App() {
     }
 
     try {
-      if (typeof window !== 'undefined' && window.solana?.isPhantom) {
-        const resp = await window.solana.connect();
-        const pub = resp.publicKey.toString();
+      if (provider) {
+        const resp = await provider.connect();
+        const pub = (resp?.publicKey || provider.publicKey).toString();
         setWalletAddress(pub);
         setIsWalletConnected(true);
 
+        const walletName = provider.isPhantom ? 'Phantom' : provider.isSolflare ? 'Solflare' : provider.isBackpack ? 'Backpack' : 'Solana Wallet';
+
         try {
           const connection = new Connection(DEVNET_RPC, 'confirmed');
-          const bal = await connection.getBalance(resp.publicKey);
+          const bal = await connection.getBalance(provider.publicKey || resp.publicKey);
           setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
-          addLog('NET', `Phantom Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
+          addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
         } catch {
-          addLog('NET', `Phantom Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
+          addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
         }
       } else {
         const mockAddr = 'Sol7' + Math.random().toString(36).substring(2, 6) + 'X9dev';
@@ -163,6 +213,7 @@ export default function App() {
     const affiliateCut = parseFloat((gross * 0.05).toFixed(4));
     const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
 
+    // 1. Autonomous Bot Purchase (M2M Daemon)
     if (isAgentAuto) {
       if (agentVaultBalance < gross) {
         addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
@@ -173,6 +224,7 @@ export default function App() {
       addLog('BOT', `[M2M Daemon] Auto-purchasing ${product.sku} (${gross} SOL)...`);
 
       setTimeout(() => {
+        const txSig = '5wKz' + Math.random().toString(36).substring(2, 8);
         setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
         setActivePurchase(null);
 
@@ -197,6 +249,7 @@ export default function App() {
       return;
     }
 
+    // 2. Manual Purchase (UI Button Click)
     setActivePurchase(product.id);
     addLog('M2M', `Initiating atomic 90/5/5 settlement for ${product.sku} (${gross} SOL)...`);
 
@@ -204,10 +257,12 @@ export default function App() {
     let isRealOnChain = false;
 
     try {
-      if (typeof window !== 'undefined' && window.solana?.isPhantom && window.solana.publicKey) {
-        addLog('SYS', 'Awaiting Phantom approval for Devnet transaction...');
+      const provider = getSolanaProvider();
+
+      if (provider && provider.publicKey) {
+        addLog('SYS', 'Awaiting wallet approval for Devnet transaction...');
         const connection = new Connection(DEVNET_RPC, 'confirmed');
-        const buyerPubkey = window.solana.publicKey;
+        const buyerPubkey = provider.publicKey;
 
         const totalLamports = Math.round(gross * LAMPORTS_PER_SOL);
         const vendorLamports = Math.floor(totalLamports * 0.90);
@@ -225,18 +280,12 @@ export default function App() {
             fromPubkey: buyerPubkey,
             toPubkey: targetVendor,
             lamports: vendorLamports,
-          })
-        );
-
-        transaction.add(
+          }),
           SystemProgram.transfer({
             fromPubkey: buyerPubkey,
             toPubkey: targetAdmin,
             lamports: adminLamports,
-          })
-        );
-
-        transaction.add(
+          }),
           SystemProgram.transfer({
             fromPubkey: buyerPubkey,
             toPubkey: targetAffiliate,
@@ -248,14 +297,19 @@ export default function App() {
         transaction.recentBlockhash = blockhash;
         transaction.feePayer = buyerPubkey;
 
-        const signed = await window.solana.signAndSendTransaction(transaction);
-        txSig = signed.signature;
+        const signed = await provider.signAndSendTransaction(transaction);
+        txSig = signed.signature || signed;
         isRealOnChain = true;
 
         addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
         addLog('NET', `Confirmed on Solana Devnet!`);
       } else {
+        if (agentVaultBalance < gross) {
+          addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
+          setActivePurchase(null);
+          return;
+        }
         txSig = '5wKz' + Math.random().toString(36).substring(2, 8) + 'dev';
         setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
       }
@@ -297,7 +351,7 @@ export default function App() {
     }
   };
 
-  // Autonomous Bot Loop (Only runs in Desktop view to avoid duplicate execution on mobile)
+  // Autonomous Bot Loop (Desktop View only)
   useEffect(() => {
     let interval = null;
     if (isAutonomous && !isMobile) {
@@ -588,7 +642,7 @@ export default function App() {
                     <span>AGENT TELEMETRY LOG</span>
                   </div>
                   <button 
-                    type="button"
+                    type="button" 
                     onClick={() => setTerminalLogs([])}
                     className="text-[10px] text-slate-500 hover:text-slate-300 underline"
                   >
@@ -630,7 +684,7 @@ export default function App() {
           </>
         )}
 
-        {/* VIEW 2: VENDOR PORTAL (WALLET-GATED ON DESKTOP) */}
+        {/* VIEW 2: VENDOR PORTAL */}
         {activeTab === 'vendor' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
@@ -650,7 +704,7 @@ export default function App() {
                 onClick={handleConnectWallet}
                 className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
               >
-                <span>👛</span> Connect Phantom Wallet
+                <span>👛</span> Connect Wallet
               </button>
             </div>
           ) : (
@@ -664,7 +718,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 3: ADMIN CONSOLE (WALLET-GATED ON DESKTOP) */}
+        {/* VIEW 3: ADMIN CONSOLE */}
         {activeTab === 'admin' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
@@ -728,7 +782,7 @@ export default function App() {
                   <a 
                     href={`https://solscan.io/tx/${licenseModal.txSignature}?cluster=devnet`}
                     target="_blank" 
-                    rel="noreferrer"
+                    rel="noreferrer" 
                     className="text-cyan-400 underline font-bold hover:text-cyan-300"
                   >
                     {licenseModal.txSignature.slice(0, 12)}... (View Solscan)
