@@ -17,6 +17,7 @@ import {
   verifyLicenseOnDb, 
   subscribeToLiveSettlements 
 } from './services/settlements';
+import Footer from './components/Footer';
 
 // ==========================================
 // SOLANA DEVNET & PROTOCOL WALLET CONFIG
@@ -27,7 +28,7 @@ const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
 const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
 const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
 
-// Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, Solana)
+// Multi-Wallet Auto Detection Fallback
 const getSolanaProvider = () => {
   if (typeof window === 'undefined') return null;
   return window.phantom?.solana || window.solflare || window.backpack || window.solana || null;
@@ -54,6 +55,8 @@ export default function App() {
   const [walletAddress, setWalletAddress] = useState('');
   const [realSolBalance, setRealSolBalance] = useState(null);
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [connectedProvider, setConnectedProvider] = useState(null);
 
   // Modals & Feature States
   const [activePurchase, setActivePurchase] = useState(null);
@@ -161,40 +164,68 @@ export default function App() {
     addLog('SYS', 'Settlement ledger history cleared.');
   };
 
-  // Connect Wallet
+  // Trigger Pop-up Modal Multi-Wallet
   const handleConnectWallet = async () => {
-    const provider = getSolanaProvider();
-
     if (isWalletConnected) {
+      const provider = connectedProvider || getSolanaProvider();
       if (provider?.disconnect) {
         try { await provider.disconnect(); } catch (e) {}
       }
       setIsWalletConnected(false);
       setWalletAddress('');
       setRealSolBalance(null);
+      setConnectedProvider(null);
       addLog('SYS', 'Wallet disconnected.');
       return;
     }
 
+    setShowWalletModal(true);
+  };
+
+  // Eksekusi Connect ke Wallet Spesifik
+  const connectToWallet = async (walletType) => {
+    setShowWalletModal(false);
     try {
-      if (provider) {
-        const resp = await provider.connect();
-        const pub = (resp?.publicKey || provider.publicKey).toString();
-        setWalletAddress(pub);
-        setIsWalletConnected(true);
+      let provider = null;
 
-        const walletName = provider.isPhantom ? 'Phantom' : provider.isSolflare ? 'Solflare' : 'Solana Wallet';
-
-        try {
-          const connection = new Connection(DEVNET_RPC, 'confirmed');
-          const bal = await connection.getBalance(provider.publicKey || resp.publicKey);
-          setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
-          addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
-        } catch {
-          addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
+      if (walletType === 'phantom') {
+        provider = window.phantom?.solana || (window.solana?.isPhantom ? window.solana : null);
+        if (!provider && isMobile) {
+          window.location.href = `https://phantom.app/ul/browse/${encodeURIComponent(window.location.href)}`;
+          return;
         }
+      } else if (walletType === 'solflare') {
+        provider = window.solflare;
+        if (!provider && isMobile) {
+          window.location.href = `https://solflare.com/ul/v1/browse/${encodeURIComponent(window.location.href)}`;
+          return;
+        }
+      } else if (walletType === 'backpack') {
+        provider = window.backpack;
       } else {
-        alert('Solana wallet extension not detected! Please install Phantom or Solflare browser extension.');
+        provider = window.solana; // MetaMask Solana Snap atau Browser In-App
+      }
+
+      if (!provider) {
+        alert(`${walletType.toUpperCase()} wallet not detected! Please install the extension or open inside the wallet app.`);
+        return;
+      }
+
+      const resp = await provider.connect();
+      const pub = (resp?.publicKey || provider.publicKey).toString();
+      setWalletAddress(pub);
+      setIsWalletConnected(true);
+      setConnectedProvider(provider);
+
+      const walletName = walletType === 'phantom' ? 'Phantom' : walletType === 'solflare' ? 'Solflare' : walletType === 'backpack' ? 'Backpack' : 'Web3 Wallet';
+
+      try {
+        const connection = new Connection(DEVNET_RPC, 'confirmed');
+        const bal = await connection.getBalance(provider.publicKey || resp.publicKey);
+        setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
+        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
+      } catch {
+        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
       }
     } catch (err) {
       addLog('ERR', 'Wallet connection rejected: ' + (err.message || 'Cancelled'));
@@ -203,7 +234,7 @@ export default function App() {
 
   // PayFi Execution Engine
   const executeBuy = async (product, isAgentAuto = false) => {
-    const provider = getSolanaProvider();
+    const provider = connectedProvider || getSolanaProvider();
     const hasWallet = provider && provider.publicKey;
 
     const gross = product.priceSol;
@@ -263,7 +294,6 @@ export default function App() {
       addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
       addLog('KEY', `License Issued: ${generatedKey}`);
 
-      // Catat langsung ke state tabel Admin secara instan
       const newSaleItem = {
         id: 'tx-' + Math.random().toString(36).substring(2, 6),
         time: new Date().toLocaleTimeString('en-US'),
@@ -280,7 +310,6 @@ export default function App() {
       };
       setMerchantSales((prev) => [newSaleItem, ...prev]);
 
-      // Simpan catatan ke database Supabase
       try {
         await insertSettlementRecord({
           tx_signature: txSig,
@@ -379,6 +408,7 @@ export default function App() {
           gasTank={agentVaultBalance}
           setGasTank={setAgentVaultBalance}
           botLogs={terminalLogs}
+          setBotLogs={setTerminalLogs}
           products={products}
           onAddProduct={handleAddProduct}
           onUpdateProduct={handleUpdateProduct}
@@ -944,6 +974,65 @@ JSON.stringify({
           </div>
         </div>
       )}
+
+      {/* 5. MODAL MULTI-WALLET (PHANTOM, SOLFLARE, BACKPACK, METAMASK) */}
+      {showWalletModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-[#0b1222] border border-slate-800 rounded-2xl max-w-xs w-full p-4 space-y-3 font-mono">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <span className="text-xs font-bold text-white">Select Solana Wallet</span>
+              <button 
+                type="button" 
+                onClick={() => setShowWalletModal(false)} 
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-2 text-xs">
+              <button
+                type="button"
+                onClick={() => connectToWallet('phantom')}
+                className="w-full bg-slate-900 hover:bg-purple-950/40 border border-slate-800 hover:border-purple-600 p-2.5 rounded-xl flex items-center gap-2.5 text-left transition"
+              >
+                <span className="text-base">👻</span>
+                <span className="font-bold text-white">Phantom</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => connectToWallet('solflare')}
+                className="w-full bg-slate-900 hover:bg-amber-950/40 border border-slate-800 hover:border-amber-600 p-2.5 rounded-xl flex items-center gap-2.5 text-left transition"
+              >
+                <span className="text-base">🔥</span>
+                <span className="font-bold text-white">Solflare</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => connectToWallet('backpack')}
+                className="w-full bg-slate-900 hover:bg-rose-950/40 border border-slate-800 hover:border-rose-600 p-2.5 rounded-xl flex items-center gap-2.5 text-left transition"
+              >
+                <span className="text-base">🎒</span>
+                <span className="font-bold text-white">Backpack</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => connectToWallet('browser')}
+                className="w-full bg-slate-900 hover:bg-blue-950/40 border border-slate-800 hover:border-blue-600 p-2.5 rounded-xl flex items-center gap-2.5 text-left transition"
+              >
+                <span className="text-base">🦊</span>
+                <span className="font-bold text-white">MetaMask / Browser</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER DESKTOP & GLOBAL */}
+      {!isMobile && <Footer />}
 
     </div>
   );

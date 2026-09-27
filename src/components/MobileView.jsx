@@ -3,6 +3,7 @@ import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
 import AutonPayLogo from './AutonPayLogo';
 import { verifyLicenseOnDb } from '../services/settlements';
+import Footer from './Footer';
 
 export default function MobileView({
   wallet,
@@ -365,8 +366,11 @@ export default function MobileView({
                   </span>
                   <button 
                     type="button"
-                    onClick={() => setBotLogs([])}
-                    className="text-[10px] text-slate-500 hover:text-slate-300 underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setBotLogs([]);
+                    }}
+                    className="text-[10px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded border border-slate-700 transition"
                   >
                     Clear
                   </button>
@@ -469,6 +473,13 @@ export default function MobileView({
             </div>
           )}
 
+        </div>
+
+        {/* ======================================================== */}
+        {/* FOOTER MOBILE                                           */}
+        {/* ======================================================== */}
+        <div className="pt-4 pb-2 w-full">
+          <Footer />
         </div>
 
         {/* ======================================================== */}

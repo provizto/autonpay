@@ -2,45 +2,73 @@ import React, { useState } from 'react';
 import { initialProducts } from '../../data/products';
 import { executePayFiPurchase } from '../../utils/solanaPay';
 
-export default function PayFiStore({ solPriceUsd = 145 }) {
-  const [products] = useState(initialProducts);
+// Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, Solana Browser)
+const getSolanaProvider = () => {
+  if (typeof window === 'undefined') return null;
+  return window.phantom?.solana || window.solflare || window.backpack || window.solana || null;
+};
+
+export default function PayFiStore({ 
+  solPriceUsd = 145, 
+  products: propProducts, 
+  onBuyProduct 
+}) {
+  const products = propProducts && propProducts.length > 0 ? propProducts : initialProducts;
   const [loadingId, setLoadingId] = useState(null);
   const [receipt, setReceipt] = useState(null);
 
   const handleBuy = async (product) => {
+    // 1. Jika ada handler dari App.jsx, prioritaskan alur utama
+    if (onBuyProduct) {
+      onBuyProduct(product);
+      return;
+    }
+
     setLoadingId(product.id);
+
     try {
-      if (typeof window !== 'undefined' && window.solana?.isPhantom) {
-        const res = await executePayFiPurchase({
-          wallet: window.solana,
-          vendorAddress: product.vendorWallet,
-          priceSol: product.priceSol,
-          productSku: product.sku
-        });
-        setReceipt({
-          ...res,
-          title: product.title,
-          productLink: product.instantAccessUrl,
-          priceSol: product.priceSol
-        });
-      } else {
-        // Fallback simulation for non-wallet environment
-        setTimeout(() => {
-          setReceipt({
-            signature: '5wKz' + Math.random().toString(36).substring(2, 8),
-            explorerUrl: 'https://explorer.solana.com/?cluster=devnet',
-            merchantCut: (product.priceSol * 0.90).toFixed(4),
-            adminCut: (product.priceSol * 0.05).toFixed(4),
-            affiliateCut: (product.priceSol * 0.05).toFixed(4),
-            title: product.title,
-            productLink: product.instantAccessUrl,
-            priceSol: product.priceSol,
-            sku: product.sku
-          });
-        }, 800);
+      const provider = getSolanaProvider();
+
+      // 2. Kunci: Wajib ada dompet Solana!
+      if (!provider) {
+        alert('Solana wallet not detected! Please open this app inside Phantom, Solflare, or Backpack in-app browser.');
+        setLoadingId(null);
+        return;
       }
+
+      // 3. Jika wallet belum terkoneksi, minta connect terlebih dahulu
+      if (!provider.publicKey) {
+        try {
+          await provider.connect();
+        } catch {
+          alert('Wallet connection rejected. Please connect your wallet to purchase.');
+          setLoadingId(null);
+          return;
+        }
+      }
+
+      // 4. Eksekusi Pembayaran On-Chain Asli
+      const res = await executePayFiPurchase({
+        wallet: provider,
+        vendorAddress: product.vendorWallet,
+        priceSol: product.priceSol,
+        productSku: product.sku
+      });
+
+      setReceipt({
+        ...res,
+        title: product.title,
+        productLink: product.instantAccessUrl,
+        priceSol: product.priceSol,
+        merchantCut: res?.merchantCut || (product.priceSol * 0.90).toFixed(4),
+        adminCut: res?.adminCut || (product.priceSol * 0.05).toFixed(4),
+        affiliateCut: res?.affiliateCut || (product.priceSol * 0.05).toFixed(4),
+        signature: res?.signature || res?.txSignature
+      });
+
     } catch (err) {
-      alert('Purchase failed: ' + (err.message || 'Transaction cancelled'));
+      console.error(err);
+      alert('Purchase failed: ' + (err.message || 'Transaction rejected or insufficient Devnet SOL.'));
     } finally {
       setLoadingId(null);
     }
@@ -116,11 +144,26 @@ export default function PayFiStore({ solPriceUsd = 145 }) {
             <div className="bg-[#060a12] p-3 rounded-xl border border-slate-800 space-y-1.5">
               <div className="text-white font-bold truncate">{receipt.title}</div>
               <div className="text-cyan-400 font-bold">{receipt.priceSol} SOL</div>
+              
               <div className="text-[10px] text-slate-400 border-t border-slate-800 pt-1">
                 Vendor: +{receipt.merchantCut} SOL (90%) <br />
                 Admin: +{receipt.adminCut} SOL (5%) <br />
                 Affiliate: +{receipt.affiliateCut} SOL (5%)
               </div>
+
+              {receipt.signature && (
+                <div className="text-[10px] text-slate-400 pt-1">
+                  Tx Signature:{' '}
+                  <a
+                    href={`https://solscan.io/tx/${receipt.signature}?cluster=devnet`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-cyan-400 underline font-bold"
+                  >
+                    {receipt.signature.slice(0, 10)}... (Solscan ↗)
+                  </a>
+                </div>
+              )}
               
               {receipt.productLink && (
                 <div className="pt-1.5 border-t border-slate-800">
