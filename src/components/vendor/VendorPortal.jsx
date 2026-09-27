@@ -25,7 +25,7 @@ export default function VendorPortal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.sku || !formData.title || !formData.priceSol) {
-      alert('Mohon lengkapi SKU, Judul, dan Harga SOL.');
+      alert('Please fill in SKU, Title, and Price in SOL.');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function VendorPortal({
 
       if (onAddProduct) onAddProduct(newProd);
 
-      setSuccessMsg(`Produk ${newProd.sku} berhasil terdaftar di marketplace!`);
+      setSuccessMsg(`Asset ${newProd.sku} successfully listed on marketplace!`);
       setFormData({
         sku: '',
         title: '',
@@ -63,7 +63,7 @@ export default function VendorPortal({
   return (
     <div className="space-y-6 font-sans">
       
-      {/* Header Info Vendor */}
+      {/* Vendor Header Info */}
       <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-lg">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -78,7 +78,7 @@ export default function VendorPortal({
           </p>
         </div>
 
-        {/* Metrik Pendapatan Toko */}
+        {/* Store Revenue Metrics */}
         <div className="flex items-center gap-3 font-mono">
           <div className="bg-slate-950 border border-slate-800 px-3.5 py-2 rounded-xl text-right">
             <span className="text-[10px] text-slate-500 uppercase block">Total Sales</span>
@@ -93,7 +93,7 @@ export default function VendorPortal({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Form Tambah Produk Baru */}
+        {/* Register New Asset Form */}
         <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
           <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
             <span className="text-cyan-400 font-bold">📦</span>
@@ -176,7 +176,7 @@ export default function VendorPortal({
               <label className="text-[10px] text-slate-400 block mb-1">DESCRIPTION</label>
               <textarea
                 rows="2"
-                placeholder="Deskripsi singkat spesifikasi API atau lisensi..."
+                placeholder="Brief description of the API specifications or license terms..."
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-slate-300 outline-none focus:border-cyan-500 font-sans text-xs"
@@ -188,15 +188,15 @@ export default function VendorPortal({
               disabled={isSubmitting}
               className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-2.5 rounded-xl transition shadow-md shadow-cyan-950 active:scale-98"
             >
-              {isSubmitting ? 'Mendaftarkan on-chain...' : 'Publish to Marketplace'}
+              {isSubmitting ? 'Registering on-chain...' : 'Publish to Marketplace'}
             </button>
           </form>
         </div>
 
-        {/* Tabel Penjualan & Produk Terdaftar */}
+        {/* Listings & Sales Ledger */}
         <div className="lg:col-span-2 space-y-4">
           
-          {/* Katalog Produk Milik Vendor (Dengan Fitur Hapus Satuan 🗑️) */}
+          {/* Active Listings Table */}
           <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-3">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="font-bold text-white flex items-center gap-1.5">
@@ -208,7 +208,7 @@ export default function VendorPortal({
             <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
               {products.length === 0 ? (
                 <div className="text-center py-6 text-slate-500 text-xs font-mono">
-                  Belum ada produk aktif. Daftarkan produk di samping.
+                  No active listings found. Register a new asset on the left.
                 </div>
               ) : (
                 products.map((p) => (
@@ -231,16 +231,15 @@ export default function VendorPortal({
                         <div className="text-[9px] text-emerald-400">Net: +{(p.priceSol * 0.9).toFixed(4)} SOL</div>
                       </div>
 
-                      {/* Tombol Hapus Satuan */}
                       <button
                         type="button"
                         onClick={() => {
-                          if (window.confirm(`Hapus listing ${p.sku} (${p.title}) dari marketplace?`)) {
+                          if (window.confirm(`Remove listing ${p.sku} (${p.title}) from the marketplace?`)) {
                             onDeleteProduct?.(p.id);
                           }
                         }}
                         className="bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 px-2 py-1 rounded-lg text-xs transition"
-                        title="Hapus Listing Produk Ini"
+                        title="Delete this listing"
                       >
                         🗑️
                       </button>
@@ -251,7 +250,7 @@ export default function VendorPortal({
             </div>
           </div>
 
-          {/* Ledger Penjualan Terakhir */}
+          {/* Sales Ledger */}
           <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-3">
             <div className="flex justify-between items-center text-xs font-mono">
               <span className="font-bold text-white flex items-center gap-1.5">
@@ -275,7 +274,7 @@ export default function VendorPortal({
                   {vendorSales.length === 0 ? (
                     <tr>
                       <td colSpan="5" className="py-4 text-center text-slate-500 text-xs">
-                        Belum ada transaksi penjualan yang tercatat.
+                        No sales transactions recorded yet.
                       </td>
                     </tr>
                   ) : (

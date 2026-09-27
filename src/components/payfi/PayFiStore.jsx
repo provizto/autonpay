@@ -43,12 +43,12 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
     setErrorMsg(null);
     setTxResult(null);
 
-    // 1. Cek koneksi wallet
+    // 1. Check wallet connection
     if (!connected || !publicKey) {
       if (openWalletModal) {
         openWalletModal(true);
       } else {
-        alert('Silakan hubungkan dompet Phantom Devnet Anda terlebih dahulu!');
+        alert('Please connect your Phantom Devnet wallet first!');
       }
       return;
     }
@@ -56,7 +56,7 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
     try {
       setLoadingSku(product.sku);
 
-      // 2. Eksekusi Pembayaran On-Chain Atomik 90/5/5
+      // 2. Execute Atomic 90/5/5 On-Chain Settlement
       const res = await executePayFiPayment({
         wallet: { publicKey, sendTransaction },
         vendorAddress: product.vendorWallet,
@@ -73,7 +73,7 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
       });
     } catch (err) {
       console.error('PayFi Purchase Error:', err);
-      setErrorMsg(err.message || 'Transaksi dibatalkan atau Devnet SOL tidak mencukupi.');
+      setErrorMsg(err.message || 'Transaction cancelled or insufficient Devnet SOL.');
     } finally {
       setLoadingSku(null);
     }
@@ -87,31 +87,31 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
   return (
     <div className="w-full space-y-3 font-sans pb-8">
       
-      {/* Search Input */}
+      {/* Search Bar */}
       <div className="bg-[#0b1329] border border-slate-800 rounded-xl px-3 py-2 flex items-center gap-2">
         <span className="text-cyan-400 text-xs">🔍</span>
         <input
           type="text"
-          placeholder="Cari produk lisensi, source code..."
+          placeholder="Search license, source code, SKU..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="bg-transparent text-xs text-slate-200 placeholder-slate-500 outline-none w-full"
+          className="bg-transparent text-xs text-slate-200 placeholder-slate-500 outline-none w-full font-mono"
         />
       </div>
 
-      {/* Banner Error */}
+      {/* Error Alert */}
       {errorMsg && (
-        <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-xs text-red-300">
+        <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-xs text-red-300 font-mono">
           ⚠️ {errorMsg}
         </div>
       )}
 
-      {/* Kuitansi Sukses On-Chain */}
+      {/* On-Chain Settlement Receipt */}
       {txResult && (
         <div className="p-3.5 bg-emerald-950/70 border border-emerald-700/80 rounded-xl text-xs text-emerald-300 space-y-2 shadow-lg font-mono">
           <div className="font-bold flex items-center justify-between text-emerald-400">
             <span className="flex items-center gap-1.5">
-              <span>✅</span> Settlement On-Chain Berhasil!
+              <span>✅</span> On-Chain Settlement Confirmed!
             </span>
             <span className="text-[10px] bg-emerald-900/60 border border-emerald-700 px-1.5 py-0.5 rounded">
               Devnet
@@ -119,12 +119,12 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
           </div>
           
           <div className="text-[11px] text-slate-300 leading-relaxed font-sans">
-            Lisensi <strong>{txResult.productTitle}</strong> berhasil diterbitkan.
+            License for <strong>{txResult.productTitle}</strong> issued successfully.
           </div>
 
           <div className="bg-[#060a12] p-2 rounded-lg border border-emerald-900/60 text-[10px] text-slate-400 space-y-0.5">
-            <div className="text-cyan-300 font-bold">Split Atomik 90 / 5 / 5:</div>
-            <div>• Vendor (90%): +{(txResult.priceSol * 0.9).toFixed(4)} SOL</div>
+            <div className="text-cyan-300 font-bold">Atomic 90 / 5 / 5 Fee Split:</div>
+            <div>• Vendor Payout (90%): +{(txResult.priceSol * 0.9).toFixed(4)} SOL</div>
             <div>• Platform Fee (5%): +{(txResult.priceSol * 0.05).toFixed(4)} SOL</div>
             <div>• Affiliate Split (5%): +{(txResult.priceSol * 0.05).toFixed(4)} SOL</div>
           </div>
@@ -135,24 +135,24 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
             rel="noreferrer"
             className="inline-block text-[11px] text-cyan-400 underline hover:text-cyan-300 pt-0.5"
           >
-            Lihat Bukti Transaksi di Solscan Devnet ↗
+            View Transaction on Solscan Devnet ↗
           </a>
         </div>
       )}
 
-      {/* Header List */}
+      {/* Catalog Header */}
       <div className="flex justify-between items-center px-1 text-xs text-slate-400">
-        <span className="font-bold text-white flex items-center gap-1">
-          <span>🛍️</span> Katalog Produk PayFi
+        <span className="font-bold text-white flex items-center gap-1 font-tech">
+          <span>🛍️</span> PayFi Product Catalog
         </span>
-        <span className="font-mono text-[10px]">{filtered.length} Active Items</span>
+        <span className="font-mono text-[10px] text-slate-500">{filtered.length} Active Items</span>
       </div>
 
-      {/* Baris Produk */}
+      {/* Product List */}
       <div className="space-y-2">
         {filtered.map((item) => {
           const isLoading = loadingSku === item.sku;
-          const idrPrice = Math.round(Number(item.priceSol) * solPriceUsd * 16000);
+          const usdPrice = (Number(item.priceSol) * solPriceUsd).toFixed(2);
 
           return (
             <div
@@ -160,7 +160,7 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
               className="bg-[#0b1329] border border-slate-800/90 hover:border-cyan-800/60 rounded-2xl p-3 flex items-center justify-between gap-2.5 transition active:scale-[0.99]"
             >
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-9 h-9 rounded-xl bg-[#121c38] border border-slate-800 flex items-center justify-center text-base flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#121c38] border border-slate-800 flex items-center justify-center text-base shrink-0">
                   📦
                 </div>
                 <div className="min-w-0 pr-1">
@@ -173,13 +173,13 @@ export default function PayFiStore({ solPriceUsd = 145, affiliateAddress = null 
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-2 shrink-0">
                 <div className="text-right font-mono">
                   <div className="text-xs font-black text-cyan-400 leading-tight">
                     {item.priceSol} SOL
                   </div>
                   <div className="text-[9px] text-slate-400 mt-0.5">
-                    Rp {idrPrice.toLocaleString('id-ID')}
+                    ≈ ${usdPrice} USD
                   </div>
                 </div>
 

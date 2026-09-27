@@ -10,9 +10,10 @@ import { initialProducts } from './data/products';
 import MobileView from './components/MobileView';
 import VendorPortal from './components/vendor/VendorPortal';
 import AdminPortal from './components/admin/AdminPortal';
+import AutonPayLogo from './components/AutonPayLogo';
 
 // ==========================================
-// KONFIGURASI SOLANA DEVNET & WALLET PROTOKOL
+// SOLANA DEVNET & PROTOCOL WALLET CONFIG
 // ==========================================
 const DEVNET_RPC = 'https://api.devnet.solana.com';
 
@@ -21,7 +22,7 @@ const DEFAULT_AFFILIATE_WALLET = 'So11111111111111111111111111111111111111112';
 const DEFAULT_VENDOR_WALLET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
 
 export default function App() {
-  // 0. Deteksi Layar Mobile (< 768px)
+  // 0. Mobile Screen Detection (< 768px)
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -34,7 +35,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 3 Tab Navigasi: 'marketplace' | 'vendor' | 'admin'
+  // 3 Navigation Tabs: 'marketplace' | 'vendor' | 'admin'
   const [activeTab, setActiveTab] = useState('marketplace'); 
   const [products, setProducts] = useState(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -46,7 +47,7 @@ export default function App() {
   const [realSolBalance, setRealSolBalance] = useState(null);
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
 
-  // 2. State Fitur & Modal
+  // 2. Feature States & Modals
   const [activePurchase, setActivePurchase] = useState(null);
   const [licenseModal, setLicenseModal] = useState(null);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
@@ -54,7 +55,7 @@ export default function App() {
   const [verifyResult, setVerifyResult] = useState(null);
   const [sdkSnippetTab, setSdkSnippetTab] = useState('python');
 
-  // 3. Autonomous Bot State & Telemetry Log
+  // 3. Autonomous Bot State & Telemetry Logs
   const [isAutonomous, setIsAutonomous] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([
     { id: 1, time: '00:00:01', type: 'SYS', msg: 'AutonPay PayFi Core Engine Initialized.' },
@@ -62,7 +63,7 @@ export default function App() {
   ]);
   const terminalEndRef = useRef(null);
 
-  // 4. Ledger Penjualan (90% Vendor, 5% Admin, 5% Affiliate)
+  // 4. Sales Ledger (90% Vendor, 5% Admin, 5% Affiliate)
   const [merchantSales, setMerchantSales] = useState([
     { 
       id: 'tx-01', 
@@ -89,7 +90,7 @@ export default function App() {
   ]);
 
   const addLog = (type, msg) => {
-    const time = new Date().toLocaleTimeString();
+    const time = new Date().toLocaleTimeString('en-US');
     setTerminalLogs((prev) => [...prev.slice(-35), { id: Date.now() + Math.random(), time, type, msg }]);
   };
 
@@ -97,7 +98,7 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
-  // Handler CRUD & Reset Data
+  // CRUD Handlers & Reset
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
@@ -132,7 +133,7 @@ export default function App() {
       if (typeof window !== 'undefined' && window.solana?.isPhantom) {
         const resp = await window.solana.connect();
         const pub = resp.publicKey.toString();
-        setWalletAddress(pub.slice(0, 4) + '...' + pub.slice(-4));
+        setWalletAddress(pub);
         setIsWalletConnected(true);
 
         try {
@@ -144,7 +145,7 @@ export default function App() {
           addLog('NET', `Phantom Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
         }
       } else {
-        const mockAddr = 'Sol7' + Math.random().toString(36).substring(2, 6) + '...9dev';
+        const mockAddr = 'Sol7' + Math.random().toString(36).substring(2, 6) + 'X9dev';
         setWalletAddress(mockAddr);
         setIsWalletConnected(true);
         addLog('NET', `Solana Devnet Mock Node linked: ${mockAddr}`);
@@ -154,7 +155,7 @@ export default function App() {
     }
   };
 
-  // Eksekusi Settlement PayFi
+  // PayFi Settlement Execution
   const executeBuy = async (product, isAgentAuto = false) => {
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
@@ -181,7 +182,7 @@ export default function App() {
         setMerchantSales((prev) => [
           {
             id: 'tx-' + Math.random().toString(36).substring(2, 6),
-            time: new Date().toLocaleTimeString(),
+            time: new Date().toLocaleTimeString('en-US'),
             sku: product.sku,
             agent: 'AutonomousDaemon_Bot',
             grossSol: gross,
@@ -267,7 +268,7 @@ export default function App() {
       setMerchantSales((prev) => [
         {
           id: 'tx-' + Math.random().toString(36).substring(2, 6),
-          time: new Date().toLocaleTimeString(),
+          time: new Date().toLocaleTimeString('en-US'),
           sku: product.sku,
           agent: 'Manual_Terminal',
           grossSol: gross,
@@ -284,7 +285,7 @@ export default function App() {
         txSignature: txSig,
         isRealOnChain,
         licenseKey: generatedKey,
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: new Date().toLocaleTimeString('en-US'),
         split: { gross, netVendor, adminFee, affiliateCut }
       });
 
@@ -292,14 +293,14 @@ export default function App() {
       console.error(err);
       setActivePurchase(null);
       addLog('ERR', 'Transaction cancelled or failed: ' + (err.message || 'Rejected'));
-      alert('Transaksi Dibatalkan / Gagal: ' + (err.message || 'Koneksi RPC Error'));
+      alert('Transaction Cancelled / Failed: ' + (err.message || 'RPC Connection Error'));
     }
   };
 
-  // Autonomous Bot Loop
+  // Autonomous Bot Loop (Only runs in Desktop view to avoid duplicate execution on mobile)
   useEffect(() => {
     let interval = null;
-    if (isAutonomous) {
+    if (isAutonomous && !isMobile) {
       addLog('BOT', 'Autonomous Agent Daemon ACTIVE. Monitoring task dependencies...');
       interval = setInterval(() => {
         if (products.length === 0) return;
@@ -307,13 +308,13 @@ export default function App() {
         addLog('TRIG', `Task trigger: Quota low for [${randomProd.category}]. Auto-purchasing ${randomProd.sku}...`);
         executeBuy(randomProd, true);
       }, 7000);
-    } else {
+    } else if (!isAutonomous && !isMobile) {
       addLog('SYS', 'Autonomous Mode paused.');
     }
     return () => clearInterval(interval);
-  }, [isAutonomous, products]);
+  }, [isAutonomous, isMobile, products]);
 
-  // Verifikasi Kunci Lisensi
+  // Verify License Key
   const handleVerify = (e) => {
     e.preventDefault();
     if (!inputKey.trim()) return;
@@ -343,7 +344,7 @@ export default function App() {
   });
 
   // ========================================================
-  // TAMPILAN SMARTPHONE (< 768px) DENGAN PROPS LENGKAP
+  // MOBILE VIEW (< 768px)
   // ========================================================
   if (isMobile) {
     return (
@@ -366,7 +367,7 @@ export default function App() {
   }
 
   // ========================================================
-  // TAMPILAN DESKTOP LENGKAP DENGAN WALLET ACCESS GATE
+  // DESKTOP VIEW
   // ========================================================
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
@@ -376,18 +377,9 @@ export default function App() {
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
           
           <div className="flex items-center gap-3">
-            <span className="text-2xl">🤖</span>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-mono font-black text-white text-base tracking-wider">AUTONPAY</span>
-                <span className="text-[9px] bg-cyan-950 border border-cyan-800 text-cyan-400 px-1.5 py-0.5 rounded font-mono font-bold">
-                  PAYFI M2M
-                </span>
-              </div>
-              <p className="text-[10px] text-slate-400 font-mono">Autonomous Payment Rail</p>
-            </div>
+            <AutonPayLogo size={36} withText={true} />
 
-            {/* Navigasi Tab 3 Mode */}
+            {/* 3-Mode Navigation Tab */}
             <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 ml-3 text-xs font-mono">
               <button
                 type="button"
@@ -451,7 +443,7 @@ export default function App() {
               <span>{isWalletConnected ? '🟢' : '👛'}</span>
               <span>
                 {isWalletConnected 
-                  ? `${walletAddress} ${realSolBalance ? `(${realSolBalance} SOL)` : ''}` 
+                  ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)} ${realSolBalance ? `(${realSolBalance} SOL)` : ''}` 
                   : 'Connect Wallet'}
               </span>
             </button>
@@ -588,7 +580,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Terminal Telemetri */}
+              {/* Telemetry Terminal */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-1.5 font-bold text-slate-300">
@@ -638,7 +630,7 @@ export default function App() {
           </>
         )}
 
-        {/* VIEW 2: VENDOR PORTAL (TERKUNCI WALLET DI DESKTOP) */}
+        {/* VIEW 2: VENDOR PORTAL (WALLET-GATED ON DESKTOP) */}
         {activeTab === 'vendor' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
@@ -650,7 +642,7 @@ export default function App() {
                   Vendor Portal Restricted
                 </h3>
                 <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
-                  Akses ke Merchant Dashboard memerlukan autentikasi dompet Web3 Solana Devnet. Silakan hubungkan dompet Anda untuk mengelola produk dan menerima direct 90% payout.
+                  Access to the Merchant Dashboard requires Solana Devnet Web3 wallet authentication. Please connect your wallet to manage products and receive direct 90% payouts.
                 </p>
               </div>
               <button
@@ -672,7 +664,7 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 3: ADMIN CONSOLE (TERKUNCI WALLET DI DESKTOP) */}
+        {/* VIEW 3: ADMIN CONSOLE (WALLET-GATED ON DESKTOP) */}
         {activeTab === 'admin' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
@@ -684,7 +676,7 @@ export default function App() {
                   Admin Console Restricted
                 </h3>
                 <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
-                  Konsol Superadmin memerlukan koneksi dompet Web3 untuk memverifikasi wewenang audit protokol, split fee 5%, dan monitoring on-chain Devnet.
+                  The Superadmin Console requires a Web3 wallet connection to verify protocol audit authority, 5% fee split, and Devnet on-chain monitoring.
                 </p>
               </div>
               <button
@@ -708,7 +700,7 @@ export default function App() {
 
       </main>
 
-      {/* 3. Modal Kuitansi */}
+      {/* 3. Settlement Receipt Modal */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
@@ -816,7 +808,7 @@ JSON.stringify({
         </div>
       )}
 
-      {/* 4. Modal Verifikasi Lisensi */}
+      {/* 4. License Verification Modal */}
       {isVerifyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">

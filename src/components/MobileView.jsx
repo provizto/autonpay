@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PayFiStore from './payfi/PayFiStore';
 import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
+import AutonPayLogo from './AutonPayLogo';
 
 export default function MobileView({
   wallet,
@@ -21,10 +22,13 @@ export default function MobileView({
   merchantSales = [],
   onClearSales,
 }) {
-  // 4 Tab di Mobile: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
+  // 4 Tabs in Mobile: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
   const [currentTab, setCurrentTab] = useState('MARKET');
   
-  // Status AI Agent Bot
+  // Safe wallet address parsing (string or object)
+  const walletAddress = typeof wallet === 'string' ? wallet : wallet?.address;
+
+  // AI Agent Bot States
   const [localIsBotRunning, setLocalIsBotRunning] = useState(false);
   const isBotRunning = externalIsBotRunning !== undefined ? externalIsBotRunning : localIsBotRunning;
   const setIsBotRunning = externalSetIsBotRunning || setLocalIsBotRunning;
@@ -41,12 +45,12 @@ export default function MobileView({
   const botLogs = externalBotLogs !== undefined ? externalBotLogs : localBotLogs;
   const setBotLogs = externalSetBotLogs || setLocalBotLogs;
 
-  // Modal Verifikasi Kunci Lisensi
+  // License Key Verification Modal
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyKey, setVerifyKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
 
-  // Simulasi Bot AI Otomatis (M2M) Membeli Mandiri
+  // M2M Autonomous Purchasing Simulation
   useEffect(() => {
     let interval = null;
     if (isBotRunning) {
@@ -63,21 +67,24 @@ export default function MobileView({
             ]);
             return prev;
           }
-          return parseFloat((prev - price).toFixed(3));
+
+          // Eksekusi pemotongan saldo dan pencatatan transaksi
+          const updatedGas = parseFloat((prev - price).toFixed(3));
+          const vendorCut = (price * 0.90).toFixed(4);
+          const adminCut = (price * 0.05).toFixed(4);
+          const affiliateCut = (price * 0.05).toFixed(4);
+          const txHash = '5wK' + Math.random().toString(36).substring(2, 6);
+          const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 7).toUpperCase() + '-SOL';
+
+          setBotLogs((l) => [
+            { time, tag: 'KEY', msg: `License issued: ${generatedKey} -> Injected into agent.` },
+            { time, tag: 'TX', msg: `Tx: ${txHash}... | Vendor: +${vendorCut} SOL | Admin: +${adminCut} SOL | Affiliate: +${affiliateCut} SOL` },
+            { time, tag: 'M2M', msg: `AI quota low. Auto-purchased API-LLM-10M (${price} SOL)` },
+            ...l.slice(0, 6)
+          ]);
+
+          return updatedGas;
         });
-
-        const vendorCut = (price * 0.90).toFixed(4);
-        const adminCut = (price * 0.05).toFixed(4);
-        const affiliateCut = (price * 0.05).toFixed(4);
-        const txHash = '5wK' + Math.random().toString(36).substring(2, 6);
-        const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 7).toUpperCase() + '-SOL';
-
-        setBotLogs((l) => [
-          { time, tag: 'KEY', msg: `License issued: ${generatedKey} -> Injected into agent.` },
-          { time, tag: 'TX', msg: `Tx: ${txHash}... | Vendor: +${vendorCut} SOL | Admin: +${adminCut} SOL | Affiliate: +${affiliateCut} SOL` },
-          { time, tag: 'M2M', msg: `AI quota low. Auto-purchased API-LLM-10M (${price} SOL)` },
-          ...l.slice(0, 6)
-        ]);
       }, 6500);
     }
     return () => clearInterval(interval);
@@ -96,50 +103,33 @@ export default function MobileView({
 
   return (
     <div className="w-full min-h-screen bg-[#060a12] text-slate-100 font-sans flex justify-center overflow-x-hidden">
-      <div className="w-full max-w-md min-h-screen px-3 pt-3 pb-20 flex flex-col justify-between box-border">
+      <div className="w-full max-w-md min-h-screen px-3 pt-3 pb-20 flex flex-col justify-start box-border">
         
         {/* ======================================================== */}
-        {/* 1. HEADER MOBILE                                         */}
+        {/* 1. MOBILE HEADER                                         */}
         {/* ======================================================== */}
         <div className="w-full mb-3 space-y-2.5">
           
-          {/* Baris 1: Logo & Tombol Wallet */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#0e172a] border border-cyan-800/50 flex items-center justify-center text-lg shadow-sm">
-                🤖
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-white tracking-wider">
-                    AUTONPAY
-                  </span>
-                  <span className="bg-cyan-950 border border-cyan-700/60 text-cyan-400 text-[9px] font-bold px-1.5 py-0.5 rounded leading-none">
-                    PAYFI M2M
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 font-mono leading-none mt-0.5">
-                  Autonomous Payment Rail
-                </p>
-              </div>
-            </div>
+          {/* Row 1: Logo & Wallet Button */}
+          <div className="flex items-center justify-between gap-2">
+            <AutonPayLogo size={32} withText={true} />
 
             {/* Wallet Pill */}
             <button
               type="button"
               onClick={onConnectWallet}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm ${
-                wallet
+              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 ${
+                walletAddress
                   ? 'bg-[#0d1629] border-emerald-700/70 text-emerald-300'
                   : 'bg-blue-600 hover:bg-blue-500 border-blue-500 text-white'
               }`}
             >
-              <span>{wallet ? '🟢' : '👛'}</span>
-              <span>{wallet ? `${wallet.slice(0, 4)}...${wallet.slice(-4)}` : 'Connect'}</span>
+              <span>{walletAddress ? '🟢' : '👛'}</span>
+              <span>{walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Connect'}</span>
             </button>
           </div>
 
-          {/* Baris 2: Gas Tank AI + Tombol Verify Key */}
+          {/* Row 2: Gas Tank & Verify Key Button */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center gap-2">
               <span className="text-amber-400 text-xs">⚡</span>
@@ -157,7 +147,7 @@ export default function MobileView({
             </button>
           </div>
 
-          {/* Baris 3: Navigasi 4 Tab Lengkap di Layar Smartphone */}
+          {/* Row 3: Navigation Tabs */}
           <div className="grid grid-cols-4 bg-[#0b1222] border border-slate-800/90 p-1 rounded-xl gap-1 text-[11px] font-mono font-bold">
             <button
               type="button"
@@ -180,7 +170,7 @@ export default function MobileView({
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>🤖</span> <span>Bot</span>
+              <span>🤖</span> <span>Agent</span>
             </button>
 
             <button
@@ -211,7 +201,7 @@ export default function MobileView({
         </div>
 
         {/* ======================================================== */}
-        {/* 2. KONTEN UTAMA TAB                                      */}
+        {/* 2. TAB CONTENTS                                          */}
         {/* ======================================================== */}
         <div className="flex-1 w-full mt-1">
           
@@ -241,7 +231,7 @@ export default function MobileView({
                     Machine-to-Machine Autonomous Buyer
                   </h2>
                   <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">
-                    Daemon memonitor kuota, memotong Gas Tank, dan mengeksekusi split fee on-chain secara otonom.
+                    Daemon monitors quotas, deducts Gas Tank, and autonomously executes on-chain split fees.
                   </p>
                 </div>
 
@@ -282,7 +272,7 @@ export default function MobileView({
                 </div>
               </div>
 
-              {/* Feed Telemetri M2M */}
+              {/* M2M Telemetry Feed */}
               <div className="bg-[#070d19] border border-slate-800/80 rounded-2xl p-3 font-mono text-[11px] space-y-2">
                 <div className="text-slate-400 font-bold flex items-center justify-between pb-1.5 border-b border-slate-800/80">
                   <span className="flex items-center gap-1.5">
@@ -317,10 +307,10 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 3: VENDOR PORTAL (TERPROTEKSI WALLET) --- */}
+          {/* --- TAB 3: VENDOR PORTAL (WALLET RESTRICTED) --- */}
           {currentTab === 'VENDOR' && (
             <div className="w-full">
-              {!wallet ? (
+              {!walletAddress ? (
                 <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
                   <div className="w-12 h-12 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
                     🔒
@@ -330,7 +320,7 @@ export default function MobileView({
                       Vendor Console Restricted
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-                      Hubungkan dompet Solana Devnet Anda untuk mendaftarkan lisensi API baru dan memantau 90% direct payout.
+                      Connect your Solana Devnet wallet to register new API licenses and track 90% direct payouts.
                     </p>
                   </div>
                   <button
@@ -343,7 +333,7 @@ export default function MobileView({
                 </div>
               ) : (
                 <VendorPortal
-                  vendorWallet={wallet}
+                  vendorWallet={walletAddress}
                   products={products}
                   onAddProduct={onAddProduct}
                   onDeleteProduct={onDeleteProduct}
@@ -353,10 +343,10 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 4: ADMIN CONSOLE (TERPROTEKSI WALLET) --- */}
+          {/* --- TAB 4: ADMIN CONSOLE (WALLET RESTRICTED) --- */}
           {currentTab === 'ADMIN' && (
             <div className="w-full">
-              {!wallet ? (
+              {!walletAddress ? (
                 <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
                   <div className="w-12 h-12 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
                     🔒
@@ -366,7 +356,7 @@ export default function MobileView({
                       Admin Console Restricted
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-                      Akses panel audit protokol dan pembagian fee memerlukan otentikasi dompet Solana.
+                      Accessing protocol audit logs and fee allocations requires Solana wallet authentication.
                     </p>
                   </div>
                   <button
@@ -392,7 +382,7 @@ export default function MobileView({
         </div>
 
         {/* ======================================================== */}
-        {/* 3. MODAL VERIFIKASI LISENSI                              */}
+        {/* 3. VERIFY LICENSE MODAL                                  */}
         {/* ======================================================== */}
         {showVerifyModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
