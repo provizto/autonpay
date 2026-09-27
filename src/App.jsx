@@ -16,7 +16,6 @@ import AdminPortal from './components/admin/AdminPortal';
 // ==========================================
 const DEVNET_RPC = 'https://api.devnet.solana.com';
 
-// Alamat Default untuk simulasi
 const DEFAULT_ADMIN_WALLET = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'; 
 const DEFAULT_AFFILIATE_WALLET = 'So11111111111111111111111111111111111111112';
 const DEFAULT_VENDOR_WALLET = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
@@ -53,7 +52,7 @@ export default function App() {
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const [inputKey, setInputKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
-  const [sdkSnippetTab, setSdkSnippetTab] = useState('python'); // 'python' | 'json' | 'curl'
+  const [sdkSnippetTab, setSdkSnippetTab] = useState('python');
 
   // 3. Autonomous Bot State & Telemetry Log
   const [isAutonomous, setIsAutonomous] = useState(false);
@@ -63,7 +62,7 @@ export default function App() {
   ]);
   const terminalEndRef = useRef(null);
 
-  // 4. Ledger Penjualan (Skema 90% Vendor, 5% Admin, 5% Affiliate)
+  // 4. Ledger Penjualan (90% Vendor, 5% Admin, 5% Affiliate)
   const [merchantSales, setMerchantSales] = useState([
     { 
       id: 'tx-01', 
@@ -155,7 +154,7 @@ export default function App() {
     }
   };
 
-  // Eksekusi Settlement PayFi (Real Multi-Instruction Split 90 : 5 : 5)
+  // Eksekusi Settlement PayFi
   const executeBuy = async (product, isAgentAuto = false) => {
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
@@ -163,7 +162,6 @@ export default function App() {
     const affiliateCut = parseFloat((gross * 0.05).toFixed(4));
     const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
 
-    // A. EKSEKUSI OTONOM BOT (Memotong Agent Gas Tank)
     if (isAgentAuto) {
       if (agentVaultBalance < gross) {
         addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
@@ -198,7 +196,6 @@ export default function App() {
       return;
     }
 
-    // B. EKSEKUSI PEMBELIAN MANUAL (On-Chain Devnet Riil via Phantom)
     setActivePurchase(product.id);
     addLog('M2M', `Initiating atomic 90/5/5 settlement for ${product.sku} (${gross} SOL)...`);
 
@@ -222,7 +219,6 @@ export default function App() {
 
         const transaction = new Transaction();
 
-        // 1. Transfer 90% ke Vendor
         transaction.add(
           SystemProgram.transfer({
             fromPubkey: buyerPubkey,
@@ -231,7 +227,6 @@ export default function App() {
           })
         );
 
-        // 2. Transfer 5% ke Admin Platform
         transaction.add(
           SystemProgram.transfer({
             fromPubkey: buyerPubkey,
@@ -240,7 +235,6 @@ export default function App() {
           })
         );
 
-        // 3. Transfer 5% ke Affiliate
         transaction.add(
           SystemProgram.transfer({
             fromPubkey: buyerPubkey,
@@ -302,7 +296,7 @@ export default function App() {
     }
   };
 
-  // Autonomous Bot Simulator Loop
+  // Autonomous Bot Loop
   useEffect(() => {
     let interval = null;
     if (isAutonomous) {
@@ -348,7 +342,9 @@ export default function App() {
     return matchCat && matchSearch;
   });
 
-  // TAMPILAN SMARTPHONE (< 768px)
+  // ========================================================
+  // TAMPILAN SMARTPHONE (< 768px) DENGAN PROPS LENGKAP
+  // ========================================================
   if (isMobile) {
     return (
       <MobileView
@@ -359,11 +355,19 @@ export default function App() {
         setIsBotRunning={setIsAutonomous}
         gasTank={agentVaultBalance}
         setGasTank={setAgentVaultBalance}
+        products={products}
+        onAddProduct={handleAddProduct}
+        onDeleteProduct={handleDeleteProduct}
+        onResetProducts={handleResetProducts}
+        merchantSales={merchantSales}
+        onClearSales={handleClearSales}
       />
     );
   }
 
-  // TAMPILAN DESKTOP LENGKAP
+  // ========================================================
+  // TAMPILAN DESKTOP LENGKAP DENGAN WALLET ACCESS GATE
+  // ========================================================
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
       
@@ -462,7 +466,6 @@ export default function App() {
         {/* VIEW 1: AGENT MARKETPLACE & BOT TELEMETRY */}
         {activeTab === 'marketplace' && (
           <>
-            {/* Banner Protokol */}
             <div className="bg-gradient-to-r from-blue-950/40 via-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -497,11 +500,9 @@ export default function App() {
               </div>
             </div>
 
-            {/* Katalog di Kiri, Live Telemetry di Kanan */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               <div className="lg:col-span-2 space-y-4">
-                {/* Search & Category Filter */}
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                   <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs font-semibold scrollbar-none">
                     {categories.map((cat) => (
@@ -532,7 +533,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* List Kartu Produk */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                   {filteredProducts.map((prod) => (
                     <div
@@ -588,7 +588,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Terminal Telemetri Agen */}
+              {/* Terminal Telemetri */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-1.5 font-bold text-slate-300">
@@ -638,31 +638,77 @@ export default function App() {
           </>
         )}
 
-        {/* VIEW 2: VENDOR PORTAL */}
+        {/* VIEW 2: VENDOR PORTAL (TERKUNCI WALLET DI DESKTOP) */}
         {activeTab === 'vendor' && (
-          <VendorPortal
-            vendorWallet={walletAddress}
-            products={products}
-            onAddProduct={handleAddProduct}
-            onDeleteProduct={handleDeleteProduct}
-            sales={merchantSales}
-          />
+          !isWalletConnected ? (
+            <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+              <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                🔒
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-wider">
+                  Vendor Portal Restricted
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
+                  Akses ke Merchant Dashboard memerlukan autentikasi dompet Web3 Solana Devnet. Silakan hubungkan dompet Anda untuk mengelola produk dan menerima direct 90% payout.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleConnectWallet}
+                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+              >
+                <span>👛</span> Connect Phantom Wallet
+              </button>
+            </div>
+          ) : (
+            <VendorPortal
+              vendorWallet={walletAddress}
+              products={products}
+              onAddProduct={handleAddProduct}
+              onDeleteProduct={handleDeleteProduct}
+              sales={merchantSales}
+            />
+          )
         )}
 
-        {/* VIEW 3: ADMIN CONSOLE */}
+        {/* VIEW 3: ADMIN CONSOLE (TERKUNCI WALLET DI DESKTOP) */}
         {activeTab === 'admin' && (
-          <AdminPortal 
-            sales={merchantSales}
-            onClearSales={handleClearSales}
-            products={products}
-            onDeleteProduct={handleDeleteProduct}
-            onResetProducts={handleResetProducts}
-          />
+          !isWalletConnected ? (
+            <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+              <div className="w-16 h-16 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                🔒
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white uppercase tracking-wider">
+                  Admin Console Restricted
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
+                  Konsol Superadmin memerlukan koneksi dompet Web3 untuk memverifikasi wewenang audit protokol, split fee 5%, dan monitoring on-chain Devnet.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleConnectWallet}
+                className="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+              >
+                <span>👛</span> Connect Admin Wallet
+              </button>
+            </div>
+          ) : (
+            <AdminPortal 
+              sales={merchantSales}
+              onClearSales={handleClearSales}
+              products={products}
+              onDeleteProduct={handleDeleteProduct}
+              onResetProducts={handleResetProducts}
+            />
+          )
         )}
 
       </main>
 
-      {/* 3. Modal Kuitansi & Agent SDK Exporter */}
+      {/* 3. Modal Kuitansi */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
@@ -671,7 +717,6 @@ export default function App() {
               <span>AUTONPAY ON-CHAIN SETTLEMENT CONFIRMED</span>
             </div>
 
-            {/* Detail Struk */}
             <div className="space-y-1.5 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono">
               <div className="flex justify-between">
                 <span className="text-slate-500">Asset:</span>
