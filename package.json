@@ -13,9 +13,10 @@
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
-    "@solana/web3.js": "^1.98.4",
-    "@supabase/supabase-js": "^2.115.0",
+    "@solana/web3.js": "^1.99.0",
+    "@supabase/supabase-js": "^2.117.2",
     "chart.js": "^4.5.1",
+    "dotenv": "^18.0.4",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-router-dom": "^7.16.0"

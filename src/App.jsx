@@ -11,8 +11,12 @@ import MobileView from './components/MobileView';
 import VendorPortal from './components/vendor/VendorPortal';
 import AdminPortal from './components/admin/AdminPortal';
 import AutonPayLogo from './components/AutonPayLogo';
-import { executePayFiPayment } from './services/payfiService';
-import { fetchSettlements } from './services/settlements';
+import { 
+  fetchSettlements, 
+  insertSettlementRecord, 
+  verifyLicenseOnDb, 
+  subscribeToLiveSettlements 
+} from './services/settlements';
 
 // ==========================================
 // SOLANA DEVNET & PROTOCOL WALLET CONFIG
@@ -23,47 +27,44 @@ const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
 const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
 const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
 
-// Helper deteksi otomatis dompet apa saja (Phantom, Solflare, Backpack, MetaMask Snap)
+// Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, MetaMask Snap)
 const getSolanaProvider = () => {
   if (typeof window === 'undefined') return null;
   return window.phantom?.solana || window.solflare || window.backpack || window.solana || null;
 };
 
 export default function App() {
-  // 0. Mobile Screen Detection (< 768px)
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 3 Navigation Tabs: 'marketplace' | 'vendor' | 'admin'
   const [activeTab, setActiveTab] = useState('marketplace'); 
   const [products, setProducts] = useState(initialProducts);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
-  // 1. Solana Wallet State
+  // Wallet State
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [realSolBalance, setRealSolBalance] = useState(null);
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
 
-  // 2. Feature States & Modals
+  // Modals & Feature States
   const [activePurchase, setActivePurchase] = useState(null);
   const [licenseModal, setLicenseModal] = useState(null);
   const [isVerifyOpen, setIsVerifyOpen] = useState(false);
   const [inputKey, setInputKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [sdkSnippetTab, setSdkSnippetTab] = useState('python');
 
-  // 3. Autonomous Bot State & Telemetry Logs
+  // Autonomous Bot State & Logs
   const [isAutonomous, setIsAutonomous] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([
     { id: 1, time: '00:00:01', type: 'SYS', msg: 'AutonPay PayFi Core Engine Initialized.' },
@@ -71,31 +72,8 @@ export default function App() {
   ]);
   const terminalEndRef = useRef(null);
 
-  // 4. Sales Ledger (90% Vendor, 5% Admin, 5% Affiliate)
-  const [merchantSales, setMerchantSales] = useState([
-    { 
-      id: 'tx-01', 
-      time: '09:40:12', 
-      sku: 'API-LLM-10M', 
-      agent: 'Agent-7X (Bot)', 
-      grossSol: 0.05, 
-      netVendorSol: 0.045, 
-      adminFeeSol: 0.0025, 
-      affiliateFeeSol: 0.0025, 
-      status: 'Settled' 
-    },
-    { 
-      id: 'tx-02', 
-      time: '09:44:05', 
-      sku: 'FEED-SOL-SENTIMENT', 
-      agent: 'WhaleTracker_AI', 
-      grossSol: 0.025, 
-      netVendorSol: 0.0225, 
-      adminFeeSol: 0.00125, 
-      affiliateFeeSol: 0.00125, 
-      status: 'Settled' 
-    }
-  ]);
+  // Sales Ledger
+  const [merchantSales, setMerchantSales] = useState([]);
 
   const addLog = (type, msg) => {
     const time = new Date().toLocaleTimeString('en-US');
@@ -106,42 +84,49 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
-  // 5. Sync Live Settlements from Supabase Database on Mount
-  useEffect(() => {
-    async function loadSupabaseSettlements() {
-      try {
-        const liveData = await fetchSettlements();
-        if (liveData && liveData.length > 0) {
-          const formatted = liveData.map((item) => ({
-            id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
-            time: item.created_at 
-              ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-              : new Date().toLocaleTimeString('en-US'),
-            sku: item.sku || 'N/A',
-            agent: item.buyer_wallet 
-              ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)} (Bot)` 
-              : 'Agent-Daemon',
-            grossSol: Number(item.gross_sol) || 0,
-            netVendorSol: Number(item.vendor_sol) || 0,
-            adminFeeSol: Number(item.admin_sol) || 0,
-            affiliateFeeSol: Number(item.affiliate_sol) || 0,
-            status: item.status || 'Settled',
-            txSignature: item.tx_signature,
-            licenseKey: item.license_key
-          }));
+  // Format Helper dari Record Supabase ke State Aplikasi
+  const formatSettlementItem = (item) => ({
+    id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
+    time: item.created_at 
+      ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      : new Date().toLocaleTimeString('en-US'),
+    sku: item.sku || 'N/A',
+    agent: item.buyer_wallet 
+      ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)} (Bot)` 
+      : 'Agent-Daemon',
+    grossSol: Number(item.gross_sol) || 0,
+    netVendorSol: Number(item.vendor_sol) || 0,
+    adminFeeSol: Number(item.admin_sol) || 0,
+    affiliateFeeSol: Number(item.affiliate_sol) || 0,
+    status: item.status || 'Settled',
+    txSignature: item.tx_signature,
+    licenseKey: item.license_key
+  });
 
-          setMerchantSales(formatted);
-          addLog('SYS', `Synced ${formatted.length} on-chain settlements from Supabase.`);
-        }
-      } catch (err) {
-        console.error('Failed to load settlements from Supabase:', err);
+  // 1. Initial Load dari Supabase + 2. Realtime Listener (Poin 2)
+  useEffect(() => {
+    async function loadData() {
+      const records = await fetchSettlements();
+      if (records && records.length > 0) {
+        setMerchantSales(records.map(formatSettlementItem));
+        addLog('SYS', `Loaded ${records.length} historical settlements from Supabase.`);
       }
     }
+    loadData();
 
-    loadSupabaseSettlements();
+    // Berlangganan event INSERT baru dari Supabase secara real-time
+    const unsubscribe = subscribeToLiveSettlements((newRecord) => {
+      const formatted = formatSettlementItem(newRecord);
+      setMerchantSales((prev) => [formatted, ...prev]);
+      addLog('NET', `[Realtime Inflow] New settlement received on-chain: ${newRecord.sku} (+${newRecord.gross_sol} SOL)`);
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
   }, []);
 
-  // CRUD Handlers & Reset
+  // CRUD Handlers
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
@@ -162,7 +147,7 @@ export default function App() {
     addLog('SYS', 'Settlement ledger history cleared.');
   };
 
-  // Connect Solana Wallet (Phantom / Solflare / Backpack / MetaMask)
+  // Connect Wallet
   const handleConnectWallet = async () => {
     const provider = getSolanaProvider();
 
@@ -205,7 +190,7 @@ export default function App() {
     }
   };
 
-  // PayFi Settlement Execution
+  // Eksekusi Pembelian PayFi
   const executeBuy = async (product, isAgentAuto = false) => {
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
@@ -213,45 +198,8 @@ export default function App() {
     const affiliateCut = parseFloat((gross * 0.05).toFixed(4));
     const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
 
-    // 1. Autonomous Bot Purchase (M2M Daemon)
-    if (isAgentAuto) {
-      if (agentVaultBalance < gross) {
-        addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
-        return;
-      }
-
-      setActivePurchase(product.id);
-      addLog('BOT', `[M2M Daemon] Auto-purchasing ${product.sku} (${gross} SOL)...`);
-
-      setTimeout(() => {
-        const txSig = '5wKz' + Math.random().toString(36).substring(2, 8);
-        setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
-        setActivePurchase(null);
-
-        addLog('TX', `[90/5/5 Split] Settled! Vendor: +${netVendor} SOL | Admin: +${adminFee} SOL | Affiliate: +${affiliateCut} SOL`);
-        addLog('KEY', `License Emitted: ${generatedKey}`);
-
-        setMerchantSales((prev) => [
-          {
-            id: 'tx-' + Math.random().toString(36).substring(2, 6),
-            time: new Date().toLocaleTimeString('en-US'),
-            sku: product.sku,
-            agent: 'AutonomousDaemon_Bot',
-            grossSol: gross,
-            netVendorSol: netVendor,
-            adminFeeSol: adminFee,
-            affiliateFeeSol: affiliateCut,
-            status: 'Settled'
-          },
-          ...prev
-        ]);
-      }, 1000);
-      return;
-    }
-
-    // 2. Manual Purchase (UI Button Click)
     setActivePurchase(product.id);
-    addLog('M2M', `Initiating atomic 90/5/5 settlement for ${product.sku} (${gross} SOL)...`);
+    addLog(isAgentAuto ? 'BOT' : 'M2M', `Initiating 90/5/5 atomic settlement for ${product.sku} (${gross} SOL)...`);
 
     let txSig = '';
     let isRealOnChain = false;
@@ -259,7 +207,7 @@ export default function App() {
     try {
       const provider = getSolanaProvider();
 
-      if (provider && provider.publicKey) {
+      if (provider && provider.publicKey && !isAgentAuto) {
         addLog('SYS', 'Awaiting wallet approval for Devnet transaction...');
         const connection = new Connection(DEVNET_RPC, 'confirmed');
         const buyerPubkey = provider.publicKey;
@@ -269,28 +217,11 @@ export default function App() {
         const adminLamports = Math.floor(totalLamports * 0.05);
         const affiliateLamports = totalLamports - vendorLamports - adminLamports;
 
-        const targetVendor = new PublicKey(product.vendorWallet || DEFAULT_VENDOR_WALLET);
-        const targetAdmin = new PublicKey(DEFAULT_ADMIN_WALLET);
-        const targetAffiliate = new PublicKey(DEFAULT_AFFILIATE_WALLET);
-
         const transaction = new Transaction();
-
         transaction.add(
-          SystemProgram.transfer({
-            fromPubkey: buyerPubkey,
-            toPubkey: targetVendor,
-            lamports: vendorLamports,
-          }),
-          SystemProgram.transfer({
-            fromPubkey: buyerPubkey,
-            toPubkey: targetAdmin,
-            lamports: adminLamports,
-          }),
-          SystemProgram.transfer({
-            fromPubkey: buyerPubkey,
-            toPubkey: targetAffiliate,
-            lamports: affiliateLamports,
-          })
+          SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(product.vendorWallet || DEFAULT_VENDOR_WALLET), lamports: vendorLamports }),
+          SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(DEFAULT_ADMIN_WALLET), lamports: adminLamports }),
+          SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(DEFAULT_AFFILIATE_WALLET), lamports: affiliateLamports })
         );
 
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -315,24 +246,24 @@ export default function App() {
       }
 
       setActivePurchase(null);
-
       addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
       addLog('KEY', `License Emitted: ${generatedKey}`);
 
-      setMerchantSales((prev) => [
-        {
-          id: 'tx-' + Math.random().toString(36).substring(2, 6),
-          time: new Date().toLocaleTimeString('en-US'),
-          sku: product.sku,
-          agent: 'Manual_Terminal',
-          grossSol: gross,
-          netVendorSol: netVendor,
-          adminFeeSol: adminFee,
-          affiliateFeeSol: affiliateCut,
-          status: 'Settled'
-        },
-        ...prev
-      ]);
+      // Simpan langsung ke Supabase
+      await insertSettlementRecord({
+        tx_signature: txSig,
+        sku: product.sku,
+        buyer_wallet: walletAddress || 'Simulated_Agent_Daemon',
+        vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
+        admin_wallet: DEFAULT_ADMIN_WALLET,         // <--- Pastikan ada
+        affiliate_wallet: DEFAULT_AFFILIATE_WALLET, // <--- Pastikan ada
+        gross_sol: gross,
+        vendor_sol: netVendor,
+        admin_sol: adminFee,
+        affiliate_sol: affiliateCut,
+        license_key: generatedKey,
+        status: 'Settled'
+      });
 
       setLicenseModal({
         product,
@@ -351,7 +282,7 @@ export default function App() {
     }
   };
 
-  // Autonomous Bot Loop (Desktop View only)
+  // Bot Simulator di Frontend
   useEffect(() => {
     let interval = null;
     if (isAutonomous && !isMobile) {
@@ -368,23 +299,21 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isAutonomous, isMobile, products]);
 
-  // Verify License Key
-  const handleVerify = (e) => {
+  // Poin 4: Verifikasi Lisensi Riil ke Database Supabase
+  const handleVerify = async (e) => {
     e.preventDefault();
     if (!inputKey.trim()) return;
 
-    if (inputKey.startsWith('AUTON-')) {
-      setVerifyResult({
-        valid: true,
-        cluster: 'Solana Devnet',
-        status: 'ACTIVE_NODE',
-        rateLimit: 'Unlimited M2M Throughput'
-      });
-    } else {
-      setVerifyResult({
-        valid: false,
-        msg: 'Invalid format. On-chain signature not found.'
-      });
+    setIsVerifying(true);
+    setVerifyResult(null);
+
+    try {
+      const res = await verifyLicenseOnDb(inputKey.trim());
+      setVerifyResult(res);
+    } catch {
+      setVerifyResult({ valid: false, msg: 'Verification failed due to network error.' });
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -397,9 +326,7 @@ export default function App() {
     return matchCat && matchSearch;
   });
 
-  // ========================================================
-  // MOBILE VIEW (< 768px)
-  // ========================================================
+  // Mobile View
   if (isMobile) {
     return (
       <MobileView
@@ -420,62 +347,50 @@ export default function App() {
     );
   }
 
-  // ========================================================
-  // DESKTOP VIEW
-  // ========================================================
+  // Desktop View
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
       
       {/* 1. Global Header */}
       <header className="border-b border-slate-800 bg-[#090e1a]/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          
           <div className="flex items-center gap-3">
             <AutonPayLogo size={36} withText={true} />
 
-            {/* 3-Mode Navigation Tab */}
             <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 ml-3 text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setActiveTab('marketplace')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  activeTab === 'marketplace' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`px-3 py-1 rounded-lg transition ${activeTab === 'marketplace' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 Marketplace
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('vendor')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  activeTab === 'vendor' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`px-3 py-1 rounded-lg transition ${activeTab === 'vendor' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 Vendor Portal
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('admin')}
-                className={`px-3 py-1 rounded-lg transition ${
-                  activeTab === 'admin' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`px-3 py-1 rounded-lg transition ${activeTab === 'admin' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
               >
                 Admin Console
               </button>
             </div>
           </div>
 
-          {/* Quick Actions & Wallet */}
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => { setIsVerifyOpen(true); setVerifyResult(null); }}
+              onClick={() => { setIsVerifyOpen(true); setVerifyResult(null); setInputKey(''); }}
               className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5"
             >
               <span>🔍</span> <span>Verify Key</span>
             </button>
 
-            {/* Agent Vault Indicator */}
             <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
               <span className="text-xs">⚡</span>
               <div className="text-right font-mono">
@@ -484,7 +399,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* Connect Wallet Button */}
             <button
               type="button"
               onClick={handleConnectWallet}
@@ -502,14 +416,11 @@ export default function App() {
               </span>
             </button>
           </div>
-
         </div>
       </header>
 
-      {/* 2. Main Body Container */}
+      {/* 2. Main Content */}
       <main className="max-w-6xl mx-auto px-4 mt-6 space-y-6">
-        
-        {/* VIEW 1: AGENT MARKETPLACE & BOT TELEMETRY */}
         {activeTab === 'marketplace' && (
           <>
             <div className="bg-gradient-to-r from-blue-950/40 via-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
@@ -526,7 +437,6 @@ export default function App() {
                 </p>
               </div>
 
-              {/* Bot Auto-Pilot Toggle */}
               <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl">
                 <div className="text-left font-mono">
                   <div className="text-[9px] text-slate-500 uppercase">Autonomous Agent Bot</div>
@@ -547,7 +457,6 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
                   <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs font-semibold scrollbar-none">
@@ -557,9 +466,7 @@ export default function App() {
                         type="button"
                         onClick={() => setSelectedCategory(cat)}
                         className={`px-3 py-1 rounded-xl whitespace-nowrap transition ${
-                          selectedCategory === cat
-                            ? 'bg-blue-600 text-white shadow-md'
-                            : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                          selectedCategory === cat ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
                         }`}
                       >
                         {cat}
@@ -611,9 +518,7 @@ export default function App() {
                           disabled={activePurchase === prod.id}
                           onClick={() => executeBuy(prod, false)}
                           className={`font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-md ${
-                            activePurchase === prod.id
-                              ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                              : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white'
+                            activePurchase === prod.id ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white'
                           }`}
                         >
                           {activePurchase === prod.id ? (
@@ -634,7 +539,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Telemetry Terminal */}
+              {/* Terminal Logs */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-1.5 font-bold text-slate-300">
@@ -674,7 +579,7 @@ export default function App() {
                     <span>Cluster: Solana Devnet</span>
                     <span className="flex items-center gap-1">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                      RPC Synced
+                      Realtime Active
                     </span>
                   </div>
                 </div>
@@ -684,21 +589,16 @@ export default function App() {
           </>
         )}
 
-        {/* VIEW 2: VENDOR PORTAL */}
         {activeTab === 'vendor' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
               <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
                 🔒
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white uppercase tracking-wider">
-                  Vendor Portal Restricted
-                </h3>
-                <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
-                  Access to the Merchant Dashboard requires Solana Devnet Web3 wallet authentication. Please connect your wallet to manage products and receive direct 90% payouts.
-                </p>
-              </div>
+              <h3 className="text-base font-bold text-white uppercase tracking-wider">Vendor Portal Restricted</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                Access to the Merchant Dashboard requires Solana Devnet Web3 wallet authentication.
+              </p>
               <button
                 type="button"
                 onClick={handleConnectWallet}
@@ -718,21 +618,16 @@ export default function App() {
           )
         )}
 
-        {/* VIEW 3: ADMIN CONSOLE */}
         {activeTab === 'admin' && (
           !isWalletConnected ? (
             <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
               <div className="w-16 h-16 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
                 🔒
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white uppercase tracking-wider">
-                  Admin Console Restricted
-                </h3>
-                <p className="text-xs text-slate-400 mt-2 font-sans leading-relaxed">
-                  The Superadmin Console requires a Web3 wallet connection to verify protocol audit authority, 5% fee split, and Devnet on-chain monitoring.
-                </p>
-              </div>
+              <h3 className="text-base font-bold text-white uppercase tracking-wider">Admin Console Restricted</h3>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                The Superadmin Console requires a Web3 wallet connection to verify protocol audit authority.
+              </p>
               <button
                 type="button"
                 onClick={handleConnectWallet}
@@ -751,7 +646,6 @@ export default function App() {
             />
           )
         )}
-
       </main>
 
       {/* 3. Settlement Receipt Modal */}
@@ -799,7 +693,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* SDK Code Snippet Exporter */}
             <div className="space-y-2">
               <div className="flex justify-between items-center text-[11px] font-mono">
                 <span className="text-slate-400 font-bold">Inject into AI Agent Code:</span>
@@ -810,9 +703,7 @@ export default function App() {
                       type="button"
                       onClick={() => setSdkSnippetTab(t)}
                       className={`px-2 py-0.5 rounded uppercase text-[10px] font-mono transition ${
-                        sdkSnippetTab === t 
-                          ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold' 
-                          : 'text-slate-500 hover:text-slate-300 border border-transparent'
+                        sdkSnippetTab === t ? 'bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold' : 'text-slate-500 hover:text-slate-300 border border-transparent'
                       }`}
                     >
                       {t}
@@ -831,7 +722,6 @@ client = PayFiClient(
 )
 response = client.execute_query(prompt="Analyze market signals")`
                 )}
-
                 {sdkSnippetTab === 'json' && (
 JSON.stringify({
   license_key: licenseModal.licenseKey,
@@ -842,7 +732,6 @@ JSON.stringify({
   status: "ACTIVE"
 }, null, 2)
                 )}
-
                 {sdkSnippetTab === 'curl' && (
 `curl -X POST ${(licenseModal.product.instantAccessUrl || '').replace('agentpay', 'autonpay')} \\
   -H "X-AutonPay-Key: ${licenseModal.licenseKey}" \\
@@ -862,14 +751,14 @@ JSON.stringify({
         </div>
       )}
 
-      {/* 4. License Verification Modal */}
+      {/* 4. Real Database License Verifier Modal */}
       {isVerifyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2 text-cyan-400 font-bold font-mono text-sm">
                 <span>🔍</span>
-                <span>VERIFY ON-CHAIN LICENSE</span>
+                <span>VERIFY ON-CHAIN LICENSE (SUPABASE DB)</span>
               </div>
               <button 
                 type="button" 
@@ -882,20 +771,29 @@ JSON.stringify({
 
             <form onSubmit={handleVerify} className="space-y-3">
               <div>
-                <label className="text-[10px] text-slate-400 font-mono block mb-1">Enter License Key:</label>
+                <label className="text-[10px] text-slate-400 font-mono block mb-1">Enter License Key to Query Database:</label>
                 <input
                   type="text"
-                  placeholder="e.g. AUTON-7X29A-SOL"
+                  placeholder="e.g. AUTON-9F39A-SOL"
                   value={inputKey}
                   onChange={(e) => setInputKey(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none focus:border-cyan-500"
+                  required
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold font-mono text-xs py-2 rounded-xl transition"
+                disabled={isVerifying}
+                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold font-mono text-xs py-2 rounded-xl transition flex items-center justify-center gap-1.5"
               >
-                Verify Status
+                {isVerifying ? (
+                  <>
+                    <span className="animate-spin text-xs">🌀</span>
+                    <span>Querying Supabase Registry...</span>
+                  </>
+                ) : (
+                  <span>Verify Status</span>
+                )}
               </button>
             </form>
 
@@ -907,17 +805,21 @@ JSON.stringify({
               }`}>
                 {verifyResult.valid ? (
                   <div className="space-y-1">
-                    <div className="font-bold flex items-center gap-1">
-                      <span>✓</span> <span>LICENSE VALID & ACTIVE</span>
+                    <div className="font-bold flex items-center gap-1 text-emerald-400">
+                      <span>✓</span> <span>LICENSE AUTHENTIC & ACTIVE</span>
                     </div>
-                    <div className="text-[10px] text-slate-400 pt-1">
-                      Cluster: {verifyResult.cluster} <br />
-                      Status: {verifyResult.status} <br />
-                      Throughput: {verifyResult.rateLimit}
+                    <div className="text-[10px] text-slate-300 pt-1 space-y-0.5">
+                      <div>Asset SKU: <strong className="text-white">{verifyResult.data.sku}</strong></div>
+                      <div>Buyer: <strong className="text-white">{verifyResult.data.buyer?.slice(0, 6)}...{verifyResult.data.buyer?.slice(-4)}</strong></div>
+                      <div>Status: <span className="text-emerald-400">{verifyResult.data.status}</span></div>
+                      <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}?cluster=devnet`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
                     </div>
                   </div>
                 ) : (
-                  <div>{verifyResult.msg}</div>
+                  <div className="flex items-center gap-1">
+                    <span>⚠️</span>
+                    <span>{verifyResult.msg}</span>
+                  </div>
                 )}
               </div>
             )}

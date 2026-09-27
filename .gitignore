@@ -11,6 +11,8 @@
 *.pem
 *.key
 *-keypair.json
+agent-wallet.json
+*-wallet.json
 
 # ==========================================
 # 2. DEPENDENCIES

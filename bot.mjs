@@ -4,164 +4,135 @@ import {
   PublicKey, 
   Transaction, 
   SystemProgram, 
-  LAMPORTS_PER_SOL, 
-  sendAndConfirmTransaction 
+  LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
-import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
 import fs from 'fs';
 
-// 1. LOAD SUPABASE CREDENTIALS FROM .ENV
-const envConfig = fs.existsSync('.env') 
-  ? fs.readFileSync('.env', 'utf-8')
-      .split('\n')
-      .reduce((acc, line) => {
-        const [key, ...val] = line.trim().split('=');
-        if (key && val.length) acc[key.trim()] = val.join('=').trim();
-        return acc;
-      }, {})
-  : {};
+dotenv.config();
 
-const SUPABASE_URL = envConfig.VITE_SUPABASE_URL;
-const SUPABASE_KEY = envConfig.VITE_SUPABASE_ANON_KEY;
+// 1. Supabase Initialization
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function recordSettlement(payload) {
-  if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.warn('[DB] Supabase credentials missing in .env. Skipping database sync.');
-    return;
-  }
+// 2. Solana Devnet Configuration
+const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+const connection = new Connection(RPC_ENDPOINT, 'confirmed');
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/settlements`, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify(payload)
-    });
+// Protocol Wallets
+const TARGET_VENDOR = new PublicKey('7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB');
+const TARGET_ADMIN = new PublicKey('9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS');
+const TARGET_AFFILIATE = new PublicKey('FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh');
 
-    if (!res.ok) {
-      const err = await res.text();
-      console.error('[DB] Failed to insert settlement:', err);
-    } else {
-      console.log('[DB] Settlement recorded successfully in Supabase.');
-    }
-  } catch (err) {
-    console.error('[DB] Network error sync to Supabase:', err.message);
-  }
-}
-
-// 2. CONFIG & PROTOCOL WALLETS
-const DEVNET_RPC = 'https://api.devnet.solana.com';
-const connection = new Connection(DEVNET_RPC, 'confirmed');
-
-const VENDOR_WALLET = new PublicKey('7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB');
-const ADMIN_WALLET = new PublicKey('9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS');
-const AFFILIATE_WALLET = new PublicKey('FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh');
-
-// 3. LOAD OR PERSIST AGENT BOT KEYPAIR
-const KEYPAIR_FILE = './bot-keypair.json';
-let agentWallet;
+// Load or Generate Agent Keypair
+let agentKeypair;
+const KEYPAIR_FILE = './agent-wallet.json';
 
 if (fs.existsSync(KEYPAIR_FILE)) {
-  const secretKey = Uint8Array.from(JSON.parse(fs.readFileSync(KEYPAIR_FILE, 'utf-8')));
-  agentWallet = Keypair.fromSecretKey(secretKey);
+  const secretKey = Uint8Array.from(JSON.parse(fs.readFileSync(KEYPAIR_FILE, 'utf8')));
+  agentKeypair = Keypair.fromSecretKey(secretKey);
 } else {
-  agentWallet = Keypair.generate();
-  fs.writeFileSync(KEYPAIR_FILE, JSON.stringify(Array.from(agentWallet.secretKey)));
+  agentKeypair = Keypair.generate();
+  fs.writeFileSync(KEYPAIR_FILE, JSON.stringify(Array.from(agentKeypair.secretKey)));
+  console.log(`[INIT] Generated new Agent Keypair: ${agentKeypair.publicKey.toBase58()}`);
 }
 
-console.log(`[BOOT] Persistent Agent Wallet: ${agentWallet.publicKey.toBase58()}`);
+const AGENT_PUBKEY = agentKeypair.publicKey;
 
-// 4. ATOMIC 90/5/5 ON-CHAIN SETTLEMENT
-async function executeAutonomousProcure(sku, priceSol) {
-  const totalLamports = Math.round(priceSol * LAMPORTS_PER_SOL);
-  const vendorLamports = Math.floor(totalLamports * 0.90);
-  const adminLamports = Math.floor(totalLamports * 0.05);
-  const affiliateLamports = totalLamports - vendorLamports - adminLamports;
+// Task SKU Catalog to simulate M2M purchasing
+const AGENT_CATALOG = [
+  { sku: 'API-LLM-10M', priceSol: 0.005 },
+  { sku: 'FEED-SOL-SENTIMENT', priceSol: 0.003 },
+  { sku: 'GPU-H100-1HR', priceSol: 0.007 }
+];
 
-  const transaction = new Transaction();
+async function executeAgentPurchase() {
+  const task = AGENT_CATALOG[Math.floor(Math.random() * AGENT_CATALOG.length)];
+  const timestamp = new Date().toLocaleTimeString('en-US');
 
-  // 90% Vendor Allocation
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: agentWallet.publicKey,
-      toPubkey: VENDOR_WALLET,
-      lamports: vendorLamports,
-    })
-  );
+  console.log(`\n======================================================`);
+  console.log(`[${timestamp}] 🤖 M2M TRIGGER: Quota low for [${task.sku}]`);
+  console.log(`Target Amount: ${task.priceSol} SOL | Payer: ${AGENT_PUBKEY.toBase58()}`);
 
-  // 5% Admin Protocol Fee
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: agentWallet.publicKey,
-      toPubkey: ADMIN_WALLET,
-      lamports: adminLamports,
-    })
-  );
+  try {
+    const balance = await connection.getBalance(AGENT_PUBKEY);
+    const balanceSol = balance / LAMPORTS_PER_SOL;
+    console.log(`[BALANCE] Current Gas Tank: ${balanceSol.toFixed(4)} Devnet SOL`);
 
-  // 5% Affiliate Split
-  transaction.add(
-    SystemProgram.transfer({
-      fromPubkey: agentWallet.publicKey,
-      toPubkey: AFFILIATE_WALLET,
-      lamports: affiliateLamports,
-    })
-  );
+    if (balanceSol < task.priceSol + 0.001) {
+      console.log(`⚠️ Insufficient Devnet balance to trigger on-chain TX.`);
+      console.log(`👉 Airdrop to agent wallet using: solana airdrop 1 ${AGENT_PUBKEY.toBase58()} --url devnet`);
+      return;
+    }
 
-  console.log(`[TX] Signing & broadcasting atomic transaction to Solana Devnet...`);
+    // Split Calculation (90% / 5% / 5%)
+    const totalLamports = Math.round(task.priceSol * LAMPORTS_PER_SOL);
+    const vendorLamports = Math.floor(totalLamports * 0.90);
+    const adminLamports = Math.floor(totalLamports * 0.05);
+    const affiliateLamports = totalLamports - vendorLamports - adminLamports;
 
-  const txSig = await sendAndConfirmTransaction(
-    connection,
-    transaction,
-    [agentWallet],
-    { commitment: 'confirmed' }
-  );
+    const transaction = new Transaction();
+    transaction.add(
+      SystemProgram.transfer({ fromPubkey: AGENT_PUBKEY, toPubkey: TARGET_VENDOR, lamports: vendorLamports }),
+      SystemProgram.transfer({ fromPubkey: AGENT_PUBKEY, toPubkey: TARGET_ADMIN, lamports: adminLamports }),
+      SystemProgram.transfer({ fromPubkey: AGENT_PUBKEY, toPubkey: TARGET_AFFILIATE, lamports: affiliateLamports })
+    );
 
-  const licenseKey = 'AUTON-' + crypto.randomBytes(4).toString('hex').toUpperCase() + '-SOL';
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = AGENT_PUBKEY;
+    transaction.sign(agentKeypair);
 
-  console.log(`\n==================================================`);
-  console.log(`[SUCCESS] On-Chain Settlement Confirmed!`);
-  console.log(`[SPLIT] Vendor (90%): +${vendorLamports / LAMPORTS_PER_SOL} SOL | Admin (5%): +${adminLamports / LAMPORTS_PER_SOL} SOL | Affiliate (5%): +${affiliateLamports / LAMPORTS_PER_SOL} SOL`);
-  console.log(`[LICENSE] Emitted License Key: ${licenseKey}`);
-  console.log(`[SOLSCAN] https://solscan.io/tx/${txSig}?cluster=devnet`);
-  console.log(`==================================================\n`);
+    console.log(`[TX] Broadcasting 90/5/5 atomic transfer to Solana Devnet...`);
+    const txSignature = await connection.sendRawTransaction(transaction.serialize());
+    await connection.confirmTransaction({ signature: txSignature, blockhash, lastValidBlockHeight }, 'confirmed');
 
-  // Record settlement to Supabase database
-  await recordSettlement({
-    tx_signature: txSig,
-    sku: sku,
-    buyer_wallet: agentWallet.publicKey.toBase58(),
-    vendor_wallet: VENDOR_WALLET.toBase58(),
-    admin_wallet: ADMIN_WALLET.toBase58(),
-    affiliate_wallet: AFFILIATE_WALLET.toBase58(),
-    gross_sol: priceSol,
-    vendor_sol: vendorLamports / LAMPORTS_PER_SOL,
-    admin_sol: adminLamports / LAMPORTS_PER_SOL,
-    affiliate_sol: affiliateLamports / LAMPORTS_PER_SOL,
-    license_key: licenseKey,
-    status: 'Settled'
-  });
-}
+    const generatedLicense = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
+    console.log(`✅ SETTLED ON-CHAIN!`);
+    console.log(`   Tx Hash: ${txSignature}`);
+    console.log(`   License: ${generatedLicense}`);
 
-async function main() {
-  const balanceLamports = await connection.getBalance(agentWallet.publicKey);
-  const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
-  console.log(`[GAS] Current Balance: ${balanceSol} SOL`);
+    // Poin 1: Simpan riil ke database Supabase
+    console.log(`[DB] Syncing settlement to Supabase...`);
+    const { error: dbError } = await supabase.from('settlements').insert([{
+      tx_signature: txSignature,
+      sku: task.sku,
+      buyer_wallet: AGENT_PUBKEY.toBase58(),
+      vendor_wallet: TARGET_VENDOR.toBase58(),
+      admin_wallet: TARGET_ADMIN.toBase58(),       // <--- Tambahkan ini
+      affiliate_wallet: TARGET_AFFILIATE.toBase58(), // <--- Tambahkan ini juga
+      gross_sol: task.priceSol,
+      vendor_sol: Number((task.priceSol * 0.90).toFixed(5)),
+      admin_sol: Number((task.priceSol * 0.05).toFixed(5)),
+      affiliate_sol: Number((task.priceSol * 0.05).toFixed(5)),
+      license_key: generatedLicense,
+      status: 'Settled'
+    }]);
 
-  const requiredSol = 0.03;
-  if (balanceSol < requiredSol) {
-    console.log(`\n[WARN] Insufficient agent balance for autonomous settlement.`);
-    console.log(`Please transfer at least 0.05 Devnet SOL to this agent address:`);
-    console.log(`👉  ${agentWallet.publicKey.toBase58()}  👈\n`);
-    return;
+    if (dbError) {
+      console.error(`❌ DB Sync Failed:`, dbError.message);
+    } else {
+      console.log(`⚡ DB Sync SUCCESS: Broadcasted to live web application!`);
+    }
+
+  } catch (err) {
+    console.error(`❌ Purchase failed:`, err.message);
   }
-
-  console.log(`\n[TASK] Resource depleted for SKU: FEED-SOL-SENTIMENT`);
-  console.log(`[DECISION] Executing autonomous settlement for 0.025 SOL...`);
-  await executeAutonomousProcure('FEED-SOL-SENTIMENT', 0.025);
 }
 
-main().catch(console.error);
+// Poin 3: Daemon Loop (Berjalan berkala setiap 25 detik)
+console.log(`🚀 AUTONPAY DAEMON BOT ACTIVATED`);
+console.log(`Agent Wallet Address : ${AGENT_PUBKEY.toBase58()}`);
+console.log(`Settlement Node      : Solana Devnet`);
+console.log(`Sync Target          : Supabase Settlements Table`);
+console.log(`Running loop every 25 seconds... (Press Ctrl+C to terminate)\n`);
+
+// Eksekusi langsung 1x saat pertama jalan
+executeAgentPurchase();
+
+// Loop berkelanjutan
+setInterval(() => {
+  executeAgentPurchase();
+}, 25000);
