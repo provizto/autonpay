@@ -689,7 +689,7 @@ export default function App() {
         </>
       )}
 
-      {/* 3. SETTLEMENT RECEIPT MODAL (DILENGKAPI TOMBOL DOWNLOAD JSON) */}
+      {/* 3. SETTLEMENT RECEIPT MODAL (DILENGKAPI TOMBOL BUKA LINK DRIVE & DOWNLOAD JSON) */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
@@ -698,6 +698,7 @@ export default function App() {
               <span>AUTONPAY ON-CHAIN SETTLEMENT CONFIRMED</span>
             </div>
 
+            {/* Rincian Struk */}
             <div className="space-y-1.5 text-xs bg-slate-950 p-3 rounded-xl border border-slate-800/80 font-mono">
               <div className="flex justify-between">
                 <span className="text-slate-500">Asset:</span>
@@ -711,6 +712,25 @@ export default function App() {
                 <span>Distribution:</span>
                 <span>Vendor: 90% | Admin: 5% | Affiliate: 5%</span>
               </div>
+              
+              {/* LINK PRODUK / GOOGLE DRIVE DARI VENDOR */}
+              <div className="flex justify-between items-center pt-1">
+                <span className="text-slate-500">Product Link:</span>
+                {licenseModal.product.instantAccessUrl ? (
+                  <a 
+                    href={licenseModal.product.instantAccessUrl} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="text-emerald-400 font-bold underline hover:text-emerald-300 truncate max-w-[220px]"
+                    title={licenseModal.product.instantAccessUrl}
+                  >
+                    🔗 {licenseModal.product.instantAccessUrl} ↗
+                  </a>
+                ) : (
+                  <span className="text-slate-500">No link attached</span>
+                )}
+              </div>
+
               <div className="flex justify-between items-center pt-1">
                 <span className="text-slate-500">Tx Signature:</span>
                 {licenseModal.isRealOnChain ? (
@@ -726,6 +746,7 @@ export default function App() {
                   <span className="text-slate-400">{licenseModal.txSignature}</span>
                 )}
               </div>
+
               <div className="pt-1.5 border-t border-slate-800">
                 <span className="text-slate-500 block mb-1">Assigned License Key:</span>
                 <div className="bg-slate-900 p-1.5 rounded border border-cyan-800/60 text-cyan-300 font-bold select-all break-all">
@@ -734,6 +755,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* SDK Code Snippet */}
             <div className="space-y-2">
               <div className="flex justify-between items-center text-[11px] font-mono">
                 <span className="text-slate-400 font-bold">Inject into AI Agent Code:</span>
@@ -759,7 +781,7 @@ export default function App() {
 
 client = PayFiClient(
     license_key="${licenseModal.licenseKey}",
-    endpoint="${(licenseModal.product.instantAccessUrl || '').replace('agentpay', 'autonpay')}"
+    endpoint="${licenseModal.product.instantAccessUrl || 'https://api.autonpay.dev/v1/resource'}"
 )
 response = client.execute_query(prompt="Analyze market signals")`
                 )}
@@ -768,21 +790,34 @@ JSON.stringify({
   license_key: licenseModal.licenseKey,
   sku: licenseModal.product.sku,
   network: "solana-devnet",
+  product_url: licenseModal.product.instantAccessUrl || "",
   split: "90_vendor_5_admin_5_affiliate",
-  endpoint: (licenseModal.product.instantAccessUrl || '').replace('agentpay', 'autonpay'),
   status: "ACTIVE"
 }, null, 2)
                 )}
                 {sdkSnippetTab === 'curl' && (
-`curl -X POST ${(licenseModal.product.instantAccessUrl || '').replace('agentpay', 'autonpay')} \\
+`curl -X POST ${licenseModal.product.instantAccessUrl || 'https://api.autonpay.dev/v1/resource'} \\
   -H "X-AutonPay-Key: ${licenseModal.licenseKey}" \\
   -H "Content-Type: application/json"`
                 )}
               </pre>
             </div>
 
-            {/* ACTION BUTTONS: DOWNLOAD JSON + CLOSE */}
-            <div className="flex gap-2 pt-1 font-mono">
+            {/* TOMBOL AKSI: BUKA LINK LANGSUNG + DOWNLOAD JSON + CLOSE */}
+            <div className="flex flex-wrap gap-2 pt-1 font-mono">
+              {/* Tombol Buka Link Google Drive / File langsung */}
+              {licenseModal.product.instantAccessUrl && (
+                <a
+                  href={licenseModal.product.instantAccessUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow"
+                >
+                  <span>🔗</span> Open Product / Drive Link ↗
+                </a>
+              )}
+
+              {/* Tombol Download JSON (sudah termasuk link produk di dalamnya) */}
               <button
                 type="button"
                 onClick={() => {
@@ -792,6 +827,7 @@ JSON.stringify({
                     sku: licenseModal.product.sku,
                     product: licenseModal.product.title,
                     price_sol: licenseModal.product.priceSol,
+                    product_link: licenseModal.product.instantAccessUrl || "N/A", // <--- LINK PRODUK DISERTAKAN DI JSON
                     settlement_tx: licenseModal.txSignature,
                     network: "solana-devnet",
                     distribution: "90% Vendor | 5% Admin | 5% Affiliate",
@@ -815,7 +851,7 @@ JSON.stringify({
                 onClick={() => setLicenseModal(null)}
                 className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
               >
-                Done & Close
+                Done
               </button>
             </div>
           </div>
