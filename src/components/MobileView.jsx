@@ -3,6 +3,7 @@ import PayFiStore from './payfi/PayFiStore';
 import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
 import AutonPayLogo from './AutonPayLogo';
+import { verifyLicenseOnDb } from '../services/settlements';
 
 export default function MobileView({
   wallet,
@@ -18,6 +19,7 @@ export default function MobileView({
   // Catalog, CRUD & Settlement Ledger Data
   products = [],
   onAddProduct,
+  onUpdateProduct, // Received from App.jsx for editing products
   onDeleteProduct,
   onResetProducts,
   merchantSales = [],
@@ -51,6 +53,16 @@ export default function MobileView({
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyKey, setVerifyKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  // Refill Gas Tank Handler
+  const handleRefillGas = () => {
+    setGasTank((prev) => parseFloat((prev + 1.0).toFixed(3)));
+    setBotLogs((l) => [
+      { id: Date.now(), time: new Date().toLocaleTimeString('en-US'), tag: 'SYS', msg: 'Agent Gas Tank refilled (+1.000 Devnet SOL).' },
+      ...l.slice(0, 7)
+    ]);
+  };
 
   // M2M Autonomous Purchasing Simulation (Runs only when not managed by App.jsx)
   useEffect(() => {
@@ -91,15 +103,22 @@ export default function MobileView({
     return () => clearInterval(interval);
   }, [isBotRunning, externalBotLogs, setIsBotRunning, setGasTank, setBotLogs]);
 
-  const handleVerify = (e) => {
+  // Real Database License Verifier (Supabase)
+  const handleVerify = async (e) => {
     e.preventDefault();
     if (!verifyKey.trim()) return;
-    setVerifyResult({
-      status: 'AUTHENTIC LICENSE',
-      key: verifyKey.trim(),
-      cluster: 'Solana Devnet Cluster',
-      timestamp: new Date().toLocaleString('en-US')
-    });
+
+    setIsVerifying(true);
+    setVerifyResult(null);
+
+    try {
+      const res = await verifyLicenseOnDb(verifyKey.trim());
+      setVerifyResult(res);
+    } catch {
+      setVerifyResult({ valid: false, msg: 'Verification failed due to network latency.' });
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
@@ -130,18 +149,38 @@ export default function MobileView({
             </button>
           </div>
 
-          {/* Row 2: Gas Tank & Verify Key Button */}
+          {/* Row 2: Gas Tank (+Refill) & Verify Key Button */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center gap-2">
-              <span className="text-amber-400 text-xs">⚡</span>
-              <span className="text-[10px] text-slate-400 font-mono uppercase font-semibold">Gas Tank:</span>
-              <span className="text-xs font-extrabold text-cyan-300 font-mono ml-auto">{gasTank} SOL</span>
+            <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleRefillGas}
+                  className="text-amber-400 text-xs hover:scale-110 active:scale-95 transition"
+                  title="Click to Refill Tank (+1.0 SOL)"
+                >
+                  ⚡
+                </button>
+                <span className="text-[10px] text-slate-400 font-mono uppercase font-semibold">Gas Tank:</span>
+                <button
+                  type="button"
+                  onClick={handleRefillGas}
+                  className="text-[9px] text-cyan-400 font-mono hover:underline active:opacity-70"
+                >
+                  (+Refill)
+                </button>
+              </div>
+              <span className="text-xs font-extrabold text-cyan-300 font-mono">{gasTank} SOL</span>
             </div>
 
             <button
               type="button"
-              onClick={() => setShowVerifyModal(true)}
-              className="bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 hover:border-cyan-600 text-cyan-300 text-xs font-mono font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition"
+              onClick={() => {
+                setShowVerifyModal(true);
+                setVerifyResult(null);
+                setVerifyKey('');
+              }}
+              className="bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 hover:border-cyan-600 text-cyan-300 text-xs font-mono font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shrink-0"
             >
               <span>🔍</span>
               <span>Verify Key</span>
@@ -254,7 +293,6 @@ export default function MobileView({
                             </span>
                           </div>
 
-                          {/* INI TOMBOL KLIK MANUAL DI HP (MEMICU POP-UP SOLSCAN) */}
                           <button
                             type="button"
                             onClick={() => onBuyProduct && onBuyProduct(prod)}
@@ -371,7 +409,7 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 3: VENDOR PORTAL (WALLET RESTRICTED) --- */}
+          {/* --- TAB 3: VENDOR PORTAL (WALLET RESTRICTED + SUPPORTS EDIT) --- */}
           {currentTab === 'VENDOR' && (
             <div className="w-full">
               {!walletAddress ? (
@@ -400,6 +438,7 @@ export default function MobileView({
                   vendorWallet={walletAddress}
                   products={products}
                   onAddProduct={onAddProduct}
+                  onUpdateProduct={onUpdateProduct} // <-- Passed here to allow editing
                   onDeleteProduct={onDeleteProduct}
                   sales={merchantSales}
                 />
@@ -446,14 +485,14 @@ export default function MobileView({
         </div>
 
         {/* ======================================================== */}
-        {/* 3. VERIFY LICENSE MODAL                                  */}
+        {/* 3. VERIFY LICENSE MODAL (REAL SUPABASE DB CHECK)          */}
         {/* ======================================================== */}
         {showVerifyModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#0b1222] border border-slate-800 w-full max-w-sm rounded-2xl p-4 shadow-2xl space-y-3">
               <div className="flex justify-between items-center pb-2 border-b border-slate-800">
                 <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 font-mono">
-                  <span>🔍</span> Verify License Key
+                  <span>🔍</span> Verify License (Supabase DB)
                 </span>
                 <button
                   type="button"
@@ -471,7 +510,7 @@ export default function MobileView({
               <form onSubmit={handleVerify} className="space-y-2">
                 <input
                   type="text"
-                  placeholder="Enter Tx Hash or License Key..."
+                  placeholder="Enter License Key (e.g. AUTON-...)"
                   value={verifyKey}
                   onChange={(e) => setVerifyKey(e.target.value)}
                   className="w-full bg-[#060a12] border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white placeholder-slate-500 outline-none focus:border-cyan-500"
@@ -479,20 +518,44 @@ export default function MobileView({
                 />
                 <button
                   type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold font-mono text-xs py-2 rounded-xl transition shadow"
+                  disabled={isVerifying}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold font-mono text-xs py-2 rounded-xl transition shadow flex items-center justify-center gap-1.5"
                 >
-                  Verify On-Chain Authenticity
+                  {isVerifying ? (
+                    <>
+                      <span className="animate-spin text-xs">🌀</span>
+                      <span>Querying Supabase...</span>
+                    </>
+                  ) : (
+                    <span>Verify On-Chain Authenticity</span>
+                  )}
                 </button>
               </form>
 
               {verifyResult && (
-                <div className="p-3 bg-[#060a12] border border-emerald-800/80 rounded-xl text-xs font-mono space-y-1">
-                  <div className="text-emerald-400 font-bold flex items-center gap-1">
-                    <span>✅</span> {verifyResult.status}
-                  </div>
-                  <div className="text-slate-400 text-[10px]">Key: <span className="text-white">{verifyResult.key}</span></div>
-                  <div className="text-slate-400 text-[10px]">Cluster: <span className="text-cyan-400">{verifyResult.cluster}</span></div>
-                  <div className="text-slate-500 text-[9px] pt-1 border-t border-slate-800">{verifyResult.timestamp}</div>
+                <div className={`p-3 rounded-xl border text-xs font-mono ${
+                  verifyResult.valid 
+                    ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' 
+                    : 'bg-red-950/40 border-red-800 text-red-300'
+                }`}>
+                  {verifyResult.valid ? (
+                    <div className="space-y-1">
+                      <div className="font-bold flex items-center gap-1 text-emerald-400">
+                        <span>✓</span> <span>LICENSE AUTHENTIC & ACTIVE</span>
+                      </div>
+                      <div className="text-[10px] text-slate-300 pt-1 space-y-0.5">
+                        <div>Asset SKU: <strong className="text-white">{verifyResult.data.sku}</strong></div>
+                        <div>Buyer: <strong className="text-white">{verifyResult.data.buyer?.slice(0, 6)}...{verifyResult.data.buyer?.slice(-4)}</strong></div>
+                        <div>Status: <span className="text-emerald-400">{verifyResult.data.status}</span></div>
+                        <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}?cluster=devnet`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <span>⚠️</span>
+                      <span>{verifyResult.msg}</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

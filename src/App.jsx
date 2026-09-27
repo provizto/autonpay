@@ -84,6 +84,12 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
+  // Refill Saldo Agent Gas Tank
+  const handleRefillGas = () => {
+    setAgentVaultBalance((prev) => parseFloat((prev + 1.0).toFixed(3)));
+    addLog('SYS', 'Agent Gas Tank refilled (+1.000 Devnet SOL).');
+  };
+
   const formatSettlementItem = (item) => ({
     id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
     time: item.created_at 
@@ -123,9 +129,17 @@ export default function App() {
     };
   }, []);
 
+  // CRUD Product Handlers (Add, Update, Delete, Reset)
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
+  };
+
+  const handleUpdateProduct = (updatedProduct) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    );
+    addLog('SYS', `Asset [${updatedProduct.sku}] updated successfully by vendor.`);
   };
 
   const handleDeleteProduct = (productId) => {
@@ -186,13 +200,7 @@ export default function App() {
   // PayFi Execution Engine
   const executeBuy = async (product, isAgentAuto = false) => {
     const provider = getSolanaProvider();
-
-    // Manual purchase requires real Devnet wallet for Solscan broadcast
-    if (!isAgentAuto && (!provider || !provider.publicKey)) {
-      alert("Please connect your Phantom or Solflare wallet (Devnet) first!");
-      await handleConnectWallet();
-      return;
-    }
+    const hasWallet = provider && provider.publicKey;
 
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
@@ -201,15 +209,15 @@ export default function App() {
     const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 9).toUpperCase() + '-SOL';
 
     setActivePurchase(product.id);
-    addLog(isAgentAuto ? 'BOT' : 'M2M', `Initiating 90/5/5 atomic settlement for ${product.sku} (${gross} SOL)...`);
+    addLog(isAgentAuto ? 'BOT' : 'M2M', `Initiating 90/5/5 settlement for ${product.sku} (${gross} SOL)...`);
 
     let txSig = '';
     let isRealOnChain = false;
 
     try {
-      if (provider && provider.publicKey && !isAgentAuto) {
-        // Real On-Chain Devnet Transaction
-        addLog('SYS', 'Awaiting wallet approval for Devnet transaction...');
+      // 1. Eksekusi On-Chain Riil jika ada dompet Phantom / Devnet terhubung
+      if (hasWallet && !isAgentAuto) {
+        addLog('SYS', 'Awaiting wallet signature for Solana Devnet...');
         const connection = new Connection(DEVNET_RPC, 'confirmed');
         const buyerPubkey = provider.publicKey;
 
@@ -236,22 +244,25 @@ export default function App() {
         addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
         addLog('NET', `Confirmed on Solana Devnet! Hash: ${txSig}`);
-      } else {
-        // Autonomous Agent Routine (Internal Protocol Tank)
+      } 
+      // 2. Eksekusi Simulasi Gas Tank (Untuk Bot & Pembelian Manual di Browser HP tanpa Web3 Extension)
+      else {
         if (agentVaultBalance < gross) {
-          addLog('ERR', `Settlement aborted: Insufficient Agent Gas Tank for ${product.sku}`);
+          addLog('ERR', `Settlement aborted: Insufficient Agent Gas Tank for ${product.sku}. Click (+Refill) in the header.`);
           setActivePurchase(null);
+          if (!isAgentAuto) alert('Agent Gas Tank depleted! Please click (+Refill) at the top right.');
           return;
         }
         txSig = '5wKz' + Math.random().toString(36).substring(2, 8) + 'dev';
         setAgentVaultBalance((prev) => parseFloat((prev - gross).toFixed(4)));
+        isRealOnChain = false;
       }
 
       setActivePurchase(null);
       addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
       addLog('KEY', `License Issued: ${generatedKey}`);
 
-      // Record to Supabase
+      // Simpan catatan ke database Supabase
       try {
         await insertSettlementRecord({
           tx_signature: txSig,
@@ -271,7 +282,7 @@ export default function App() {
         console.warn('DB recording skipped:', dbErr);
       }
 
-      // ONLY OPEN MODAL IF TRIGGERED MANUALLY (NEVER FOR BACKGROUND AGENT)
+      // KUNCI: HANYA MUNCULKAN POP-UP MODAL JIKA DIKLIK MANUAL
       if (!isAgentAuto) {
         setLicenseModal({
           product,
@@ -288,7 +299,7 @@ export default function App() {
       setActivePurchase(null);
       addLog('ERR', 'Transaction cancelled or failed: ' + (err.message || 'Rejected'));
       if (!isAgentAuto) {
-        alert('Transaction Failed or Cancelled: ' + (err.message || 'RPC Connection Error'));
+        alert('Transaction Failed: ' + (err.message || 'RPC Connection Error'));
       }
     }
   };
@@ -308,7 +319,7 @@ export default function App() {
       addLog('SYS', 'Autonomous Agent paused.');
     }
     return () => clearInterval(interval);
-  }, [isAutonomous, products]);
+  }, [isAutonomous, products, agentVaultBalance]);
 
   // Real Database License Verifier
   const handleVerify = async (e) => {
@@ -350,8 +361,10 @@ export default function App() {
           setIsBotRunning={setIsAutonomous}
           gasTank={agentVaultBalance}
           setGasTank={setAgentVaultBalance}
+          botLogs={terminalLogs}
           products={products}
           onAddProduct={handleAddProduct}
+          onUpdateProduct={handleUpdateProduct}
           onDeleteProduct={handleDeleteProduct}
           onResetProducts={handleResetProducts}
           merchantSales={merchantSales}
@@ -400,10 +413,27 @@ export default function App() {
                   <span>🔍</span> <span>Verify Key</span>
                 </button>
 
+                {/* Agent Gas Tank Indicator + Refill Button */}
                 <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
-                  <span className="text-xs">⚡</span>
+                  <button 
+                    type="button"
+                    onClick={handleRefillGas}
+                    className="text-xs hover:scale-110 active:scale-95 transition"
+                    title="Click to Refill Tank (+1.0 SOL)"
+                  >
+                    ⚡
+                  </button>
                   <div className="text-right font-mono">
-                    <div className="text-[9px] text-slate-500 uppercase">Agent Gas Tank</div>
+                    <div className="text-[9px] text-slate-500 uppercase flex items-center justify-end gap-1">
+                      <span>Gas Tank</span>
+                      <button 
+                        type="button" 
+                        onClick={handleRefillGas}
+                        className="text-[9px] text-cyan-400 hover:underline"
+                      >
+                        (+Refill)
+                      </button>
+                    </div>
                     <div className="text-xs font-bold text-cyan-400">{agentVaultBalance} SOL</div>
                   </div>
                 </div>
@@ -521,7 +551,6 @@ export default function App() {
                               </span>
                             </div>
 
-                            {/* MANUAL CLICK ON DESKTOP */}
                             <button
                               type="button"
                               disabled={activePurchase === prod.id}
@@ -621,6 +650,7 @@ export default function App() {
                   vendorWallet={walletAddress}
                   products={products}
                   onAddProduct={handleAddProduct}
+                  onUpdateProduct={handleUpdateProduct}
                   onDeleteProduct={handleDeleteProduct}
                   sales={merchantSales}
                 />
@@ -659,7 +689,7 @@ export default function App() {
         </>
       )}
 
-      {/* 3. SETTLEMENT RECEIPT MODAL (WORKS ACROSS BOTH DESKTOP AND MOBILE) */}
+      {/* 3. SETTLEMENT RECEIPT MODAL (DILENGKAPI TOMBOL DOWNLOAD JSON) */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
@@ -751,13 +781,43 @@ JSON.stringify({
               </pre>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setLicenseModal(null)}
-              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl transition font-mono"
-            >
-              Done & Close
-            </button>
+            {/* ACTION BUTTONS: DOWNLOAD JSON + CLOSE */}
+            <div className="flex gap-2 pt-1 font-mono">
+              <button
+                type="button"
+                onClick={() => {
+                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                    protocol: "AutonPay PayFi Rail",
+                    license_key: licenseModal.licenseKey,
+                    sku: licenseModal.product.sku,
+                    product: licenseModal.product.title,
+                    price_sol: licenseModal.product.priceSol,
+                    settlement_tx: licenseModal.txSignature,
+                    network: "solana-devnet",
+                    distribution: "90% Vendor | 5% Admin | 5% Affiliate",
+                    timestamp: licenseModal.timestamp,
+                    created_at: new Date().toISOString()
+                  }, null, 2));
+                  const downloadAnchor = document.createElement('a');
+                  downloadAnchor.setAttribute("href", dataStr);
+                  downloadAnchor.setAttribute("download", `license-${licenseModal.licenseKey}.json`);
+                  document.body.appendChild(downloadAnchor);
+                  downloadAnchor.click();
+                  downloadAnchor.remove();
+                }}
+                className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-1.5 shadow"
+              >
+                <span>📥</span> Download License (.json)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLicenseModal(null)}
+                className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition"
+              >
+                Done & Close
+              </button>
+            </div>
           </div>
         </div>
       )}
