@@ -27,7 +27,7 @@ const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
 const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
 const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
 
-// Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, MetaMask Snap)
+// Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, Solana)
 const getSolanaProvider = () => {
   if (typeof window === 'undefined') return null;
   return window.phantom?.solana || window.solflare || window.backpack || window.solana || null;
@@ -64,7 +64,7 @@ export default function App() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [sdkSnippetTab, setSdkSnippetTab] = useState('python');
 
-  // Autonomous Bot State & Logs
+  // Autonomous Agent State & Logs
   const [isAutonomous, setIsAutonomous] = useState(false);
   const [terminalLogs, setTerminalLogs] = useState([
     { id: 1, time: '00:00:01', type: 'SYS', msg: 'AutonPay PayFi Core Engine Initialized.' },
@@ -84,7 +84,6 @@ export default function App() {
     terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [terminalLogs]);
 
-  // Format Helper dari Record Supabase ke State Aplikasi
   const formatSettlementItem = (item) => ({
     id: item.id ? `db-${item.id}` : (item.tx_signature || Math.random().toString()),
     time: item.created_at 
@@ -92,7 +91,7 @@ export default function App() {
       : new Date().toLocaleTimeString('en-US'),
     sku: item.sku || 'N/A',
     agent: item.buyer_wallet 
-      ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)} (Bot)` 
+      ? `${item.buyer_wallet.slice(0, 4)}...${item.buyer_wallet.slice(-4)}` 
       : 'Agent-Daemon',
     grossSol: Number(item.gross_sol) || 0,
     netVendorSol: Number(item.vendor_sol) || 0,
@@ -103,7 +102,6 @@ export default function App() {
     licenseKey: item.license_key
   });
 
-  // 1. Initial Load dari Supabase + 2. Realtime Listener (Poin 2)
   useEffect(() => {
     async function loadData() {
       const records = await fetchSettlements();
@@ -114,11 +112,10 @@ export default function App() {
     }
     loadData();
 
-    // Berlangganan event INSERT baru dari Supabase secara real-time
     const unsubscribe = subscribeToLiveSettlements((newRecord) => {
       const formatted = formatSettlementItem(newRecord);
       setMerchantSales((prev) => [formatted, ...prev]);
-      addLog('NET', `[Realtime Inflow] New settlement received on-chain: ${newRecord.sku} (+${newRecord.gross_sol} SOL)`);
+      addLog('NET', `[Realtime Inflow] New on-chain settlement: ${newRecord.sku} (+${newRecord.gross_sol} SOL)`);
     });
 
     return () => {
@@ -126,7 +123,6 @@ export default function App() {
     };
   }, []);
 
-  // CRUD Handlers
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
@@ -139,7 +135,7 @@ export default function App() {
 
   const handleResetProducts = () => {
     setProducts(initialProducts);
-    addLog('SYS', 'Catalog restored to default initial products.');
+    addLog('SYS', 'Catalog restored to default specifications.');
   };
 
   const handleClearSales = () => {
@@ -169,7 +165,7 @@ export default function App() {
         setWalletAddress(pub);
         setIsWalletConnected(true);
 
-        const walletName = provider.isPhantom ? 'Phantom' : provider.isSolflare ? 'Solflare' : provider.isBackpack ? 'Backpack' : 'Solana Wallet';
+        const walletName = provider.isPhantom ? 'Phantom' : provider.isSolflare ? 'Solflare' : 'Solana Wallet';
 
         try {
           const connection = new Connection(DEVNET_RPC, 'confirmed');
@@ -180,18 +176,24 @@ export default function App() {
           addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
         }
       } else {
-        const mockAddr = 'Sol7' + Math.random().toString(36).substring(2, 6) + 'X9dev';
-        setWalletAddress(mockAddr);
-        setIsWalletConnected(true);
-        addLog('NET', `Solana Devnet Mock Node linked: ${mockAddr}`);
+        alert('Solana wallet extension not detected! Please install Phantom or Solflare browser extension.');
       }
     } catch (err) {
       addLog('ERR', 'Wallet connection rejected: ' + (err.message || 'Cancelled'));
     }
   };
 
-  // Eksekusi Pembelian PayFi
+  // PayFi Execution Engine
   const executeBuy = async (product, isAgentAuto = false) => {
+    const provider = getSolanaProvider();
+
+    // Manual purchase requires real Devnet wallet for Solscan broadcast
+    if (!isAgentAuto && (!provider || !provider.publicKey)) {
+      alert("Please connect your Phantom or Solflare wallet (Devnet) first!");
+      await handleConnectWallet();
+      return;
+    }
+
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
     const adminFee = parseFloat((gross * 0.05).toFixed(4));
@@ -205,9 +207,8 @@ export default function App() {
     let isRealOnChain = false;
 
     try {
-      const provider = getSolanaProvider();
-
       if (provider && provider.publicKey && !isAgentAuto) {
+        // Real On-Chain Devnet Transaction
         addLog('SYS', 'Awaiting wallet approval for Devnet transaction...');
         const connection = new Connection(DEVNET_RPC, 'confirmed');
         const buyerPubkey = provider.publicKey;
@@ -234,10 +235,11 @@ export default function App() {
 
         addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
-        addLog('NET', `Confirmed on Solana Devnet!`);
+        addLog('NET', `Confirmed on Solana Devnet! Hash: ${txSig}`);
       } else {
+        // Autonomous Agent Routine (Internal Protocol Tank)
         if (agentVaultBalance < gross) {
-          addLog('ERR', `Settlement aborted: Insufficient Agent Vault balance for ${product.sku}`);
+          addLog('ERR', `Settlement aborted: Insufficient Agent Gas Tank for ${product.sku}`);
           setActivePurchase(null);
           return;
         }
@@ -247,59 +249,68 @@ export default function App() {
 
       setActivePurchase(null);
       addLog('TX', `[PayFi Settled] Vendor (90%): +${netVendor} SOL | Admin (5%): +${adminFee} SOL | Affiliate (5%): +${affiliateCut} SOL`);
-      addLog('KEY', `License Emitted: ${generatedKey}`);
+      addLog('KEY', `License Issued: ${generatedKey}`);
 
-      // Simpan langsung ke Supabase
-      await insertSettlementRecord({
-        tx_signature: txSig,
-        sku: product.sku,
-        buyer_wallet: walletAddress || 'Simulated_Agent_Daemon',
-        vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
-        admin_wallet: DEFAULT_ADMIN_WALLET,         // <--- Pastikan ada
-        affiliate_wallet: DEFAULT_AFFILIATE_WALLET, // <--- Pastikan ada
-        gross_sol: gross,
-        vendor_sol: netVendor,
-        admin_sol: adminFee,
-        affiliate_sol: affiliateCut,
-        license_key: generatedKey,
-        status: 'Settled'
-      });
+      // Record to Supabase
+      try {
+        await insertSettlementRecord({
+          tx_signature: txSig,
+          sku: product.sku,
+          buyer_wallet: walletAddress || 'Simulated_Agent_Daemon',
+          vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
+          admin_wallet: DEFAULT_ADMIN_WALLET,
+          affiliate_wallet: DEFAULT_AFFILIATE_WALLET,
+          gross_sol: gross,
+          vendor_sol: netVendor,
+          admin_sol: adminFee,
+          affiliate_sol: affiliateCut,
+          license_key: generatedKey,
+          status: 'Settled'
+        });
+      } catch (dbErr) {
+        console.warn('DB recording skipped:', dbErr);
+      }
 
-      setLicenseModal({
-        product,
-        txSignature: txSig,
-        isRealOnChain,
-        licenseKey: generatedKey,
-        timestamp: new Date().toLocaleTimeString('en-US'),
-        split: { gross, netVendor, adminFee, affiliateCut }
-      });
+      // ONLY OPEN MODAL IF TRIGGERED MANUALLY (NEVER FOR BACKGROUND AGENT)
+      if (!isAgentAuto) {
+        setLicenseModal({
+          product,
+          txSignature: txSig,
+          isRealOnChain,
+          licenseKey: generatedKey,
+          timestamp: new Date().toLocaleTimeString('en-US'),
+          split: { gross, netVendor, adminFee, affiliateCut }
+        });
+      }
 
     } catch (err) {
       console.error(err);
       setActivePurchase(null);
       addLog('ERR', 'Transaction cancelled or failed: ' + (err.message || 'Rejected'));
-      alert('Transaction Cancelled / Failed: ' + (err.message || 'RPC Connection Error'));
+      if (!isAgentAuto) {
+        alert('Transaction Failed or Cancelled: ' + (err.message || 'RPC Connection Error'));
+      }
     }
   };
 
-  // Bot Simulator di Frontend
+  // Autonomous Agent Simulator
   useEffect(() => {
     let interval = null;
-    if (isAutonomous && !isMobile) {
-      addLog('BOT', 'Autonomous Agent Daemon ACTIVE. Monitoring task dependencies...');
+    if (isAutonomous) {
+      addLog('BOT', 'Autonomous Agent Daemon ACTIVE. Monitoring task triggers...');
       interval = setInterval(() => {
         if (products.length === 0) return;
         const randomProd = products[Math.floor(Math.random() * products.length)];
-        addLog('TRIG', `Task trigger: Quota low for [${randomProd.category}]. Auto-purchasing ${randomProd.sku}...`);
+        addLog('TRIG', `Task trigger: Depleted quota for [${randomProd.category}]. Auto-purchasing ${randomProd.sku}...`);
         executeBuy(randomProd, true);
       }, 7000);
-    } else if (!isAutonomous && !isMobile) {
-      addLog('SYS', 'Autonomous Mode paused.');
+    } else {
+      addLog('SYS', 'Autonomous Agent paused.');
     }
     return () => clearInterval(interval);
-  }, [isAutonomous, isMobile, products]);
+  }, [isAutonomous, products]);
 
-  // Poin 4: Verifikasi Lisensi Riil ke Database Supabase
+  // Real Database License Verifier
   const handleVerify = async (e) => {
     e.preventDefault();
     if (!inputKey.trim()) return;
@@ -311,7 +322,7 @@ export default function App() {
       const res = await verifyLicenseOnDb(inputKey.trim());
       setVerifyResult(res);
     } catch {
-      setVerifyResult({ valid: false, msg: 'Verification failed due to network error.' });
+      setVerifyResult({ valid: false, msg: 'Verification failed due to network latency.' });
     } finally {
       setIsVerifying(false);
     }
@@ -326,332 +337,332 @@ export default function App() {
     return matchCat && matchSearch;
   });
 
-  // Mobile View
-  if (isMobile) {
-    return (
-      <MobileView
-        wallet={isWalletConnected ? walletAddress : ''}
-        onConnectWallet={handleConnectWallet}
-        solPriceUsd={145}
-        isBotRunning={isAutonomous}
-        setIsBotRunning={setIsAutonomous}
-        gasTank={agentVaultBalance}
-        setGasTank={setAgentVaultBalance}
-        products={products}
-        onAddProduct={handleAddProduct}
-        onDeleteProduct={handleDeleteProduct}
-        onResetProducts={handleResetProducts}
-        merchantSales={merchantSales}
-        onClearSales={handleClearSales}
-      />
-    );
-  }
-
-  // Desktop View
   return (
     <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
       
-      {/* 1. Global Header */}
-      <header className="border-b border-slate-800 bg-[#090e1a]/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
-        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <AutonPayLogo size={36} withText={true} />
+      {/* MOBILE INTERFACE */}
+      {isMobile ? (
+        <MobileView
+          wallet={isWalletConnected ? walletAddress : ''}
+          onConnectWallet={handleConnectWallet}
+          solPriceUsd={145}
+          isBotRunning={isAutonomous}
+          setIsBotRunning={setIsAutonomous}
+          gasTank={agentVaultBalance}
+          setGasTank={setAgentVaultBalance}
+          products={products}
+          onAddProduct={handleAddProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onResetProducts={handleResetProducts}
+          merchantSales={merchantSales}
+          onClearSales={handleClearSales}
+          onBuyProduct={(prod) => executeBuy(prod, false)}
+        />
+      ) : (
+        /* DESKTOP INTERFACE */
+        <>
+          <header className="border-b border-slate-800 bg-[#090e1a]/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3">
+            <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <AutonPayLogo size={36} withText={true} />
 
-            <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 ml-3 text-xs font-mono">
-              <button
-                type="button"
-                onClick={() => setActiveTab('marketplace')}
-                className={`px-3 py-1 rounded-lg transition ${activeTab === 'marketplace' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                Marketplace
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('vendor')}
-                className={`px-3 py-1 rounded-lg transition ${activeTab === 'vendor' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                Vendor Portal
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('admin')}
-                className={`px-3 py-1 rounded-lg transition ${activeTab === 'admin' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
-              >
-                Admin Console
-              </button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => { setIsVerifyOpen(true); setVerifyResult(null); setInputKey(''); }}
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5"
-            >
-              <span>🔍</span> <span>Verify Key</span>
-            </button>
-
-            <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
-              <span className="text-xs">⚡</span>
-              <div className="text-right font-mono">
-                <div className="text-[9px] text-slate-500 uppercase">Agent Gas Tank</div>
-                <div className="text-xs font-bold text-cyan-400">{agentVaultBalance} SOL</div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleConnectWallet}
-              className={`text-xs font-bold font-mono px-3.5 py-2 rounded-xl border transition flex items-center gap-1.5 ${
-                isWalletConnected
-                  ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300 hover:bg-emerald-900'
-                  : 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white shadow-md'
-              }`}
-            >
-              <span>{isWalletConnected ? '🟢' : '👛'}</span>
-              <span>
-                {isWalletConnected 
-                  ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)} ${realSolBalance ? `(${realSolBalance} SOL)` : ''}` 
-                  : 'Connect Wallet'}
-              </span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. Main Content */}
-      <main className="max-w-6xl mx-auto px-4 mt-6 space-y-6">
-        {activeTab === 'marketplace' && (
-          <>
-            <div className="bg-gradient-to-r from-blue-950/40 via-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
-                    Solana Settlement Node Active (Devnet)
-                  </span>
+                <div className="flex bg-slate-950 border border-slate-800 rounded-xl p-1 ml-3 text-xs font-mono">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('marketplace')}
+                    className={`px-3 py-1 rounded-lg transition ${activeTab === 'marketplace' ? 'bg-blue-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Marketplace
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('vendor')}
+                    className={`px-3 py-1 rounded-lg transition ${activeTab === 'vendor' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Vendor Portal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('admin')}
+                    className={`px-3 py-1 rounded-lg transition ${activeTab === 'admin' ? 'bg-purple-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                  >
+                    Admin Console
+                  </button>
                 </div>
-                <h2 className="text-lg font-bold text-white">Machine-to-Machine Commerce Gateway</h2>
-                <p className="text-xs text-slate-400 mt-0.5 max-w-xl">
-                  Automated 90/5/5 PayFi rail enabling AI agents and users to buy compute licenses on Solana Devnet with instant revenue distribution.
-                </p>
               </div>
 
-              <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl">
-                <div className="text-left font-mono">
-                  <div className="text-[9px] text-slate-500 uppercase">Autonomous Agent Bot</div>
-                  <div className={`text-xs font-bold ${isAutonomous ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    {isAutonomous ? '● AUTO-PILOT ON' : '○ MANUAL MODE'}
-                  </div>
-                </div>
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setIsAutonomous(!isAutonomous)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition ${
-                    isAutonomous ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                  onClick={() => { setIsVerifyOpen(true); setVerifyResult(null); setInputKey(''); }}
+                  className="bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1.5"
+                >
+                  <span>🔍</span> <span>Verify Key</span>
+                </button>
+
+                <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
+                  <span className="text-xs">⚡</span>
+                  <div className="text-right font-mono">
+                    <div className="text-[9px] text-slate-500 uppercase">Agent Gas Tank</div>
+                    <div className="text-xs font-bold text-cyan-400">{agentVaultBalance} SOL</div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleConnectWallet}
+                  className={`text-xs font-bold font-mono px-3.5 py-2 rounded-xl border transition flex items-center gap-1.5 ${
+                    isWalletConnected
+                      ? 'bg-emerald-950/80 border-emerald-700 text-emerald-300 hover:bg-emerald-900'
+                      : 'bg-blue-600 border-blue-500 hover:bg-blue-500 text-white shadow-md'
                   }`}
                 >
-                  {isAutonomous ? 'Stop Agent' : 'Start Agent'}
+                  <span>{isWalletConnected ? '🟢' : '👛'}</span>
+                  <span>
+                    {isWalletConnected 
+                      ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)} ${realSolBalance ? `(${realSolBalance} SOL)` : ''}` 
+                      : 'Connect Wallet'}
+                  </span>
                 </button>
               </div>
             </div>
+          </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs font-semibold scrollbar-none">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`px-3 py-1 rounded-xl whitespace-nowrap transition ${
-                          selectedCategory === cat ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
+          <main className="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+            {activeTab === 'marketplace' && (
+              <>
+                <div className="bg-gradient-to-r from-blue-950/40 via-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="text-[11px] font-mono text-emerald-400 font-bold uppercase tracking-wider">
+                        Solana Settlement Node Active (Devnet)
+                      </span>
+                    </div>
+                    <h2 className="text-lg font-bold text-white">Machine-to-Machine Commerce Gateway</h2>
+                    <p className="text-xs text-slate-400 mt-0.5 max-w-xl">
+                      Automated 90/5/5 PayFi rail enabling AI agents and users to buy compute licenses on Solana Devnet with instant revenue distribution.
+                    </p>
                   </div>
 
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
-                    <span className="text-slate-500 text-xs">🔍</span>
-                    <input
-                      type="text"
-                      placeholder="Search SKU or license..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-transparent text-xs text-white placeholder-slate-500 outline-none w-full"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                  {filteredProducts.map((prod) => (
-                    <div
-                      key={prod.id}
-                      className="bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/50 rounded-2xl p-4 flex flex-col justify-between gap-4 transition shadow-lg"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[10px] font-mono font-bold bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
-                            {prod.sku}
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            Seller: {prod.seller}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-white text-sm leading-snug">{prod.title}</h3>
-                        <p className="text-xs text-slate-400 leading-relaxed">{prod.description}</p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
-                        <div>
-                          <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
-                          <span className="text-base font-extrabold text-cyan-400 font-mono">
-                            {prod.priceSol} SOL
-                          </span>
-                        </div>
-
-                        <button
-                          type="button"
-                          disabled={activePurchase === prod.id}
-                          onClick={() => executeBuy(prod, false)}
-                          className={`font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-md ${
-                            activePurchase === prod.id ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white'
-                          }`}
-                        >
-                          {activePurchase === prod.id ? (
-                            <>
-                              <span className="animate-spin text-xs">🌀</span>
-                              <span>Settling...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>⚡</span>
-                              <span>Agent Buy</span>
-                            </>
-                          )}
-                        </button>
+                  <div className="flex items-center gap-3 bg-slate-950/80 border border-slate-800 p-2.5 rounded-xl">
+                    <div className="text-left font-mono">
+                      <div className="text-[9px] text-slate-500 uppercase">Autonomous Agent</div>
+                      <div className={`text-xs font-bold ${isAutonomous ? 'text-emerald-400' : 'text-slate-400'}`}>
+                        {isAutonomous ? '● AUTO-PILOT ON' : '○ MANUAL MODE'}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Terminal Logs */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <div className="flex items-center gap-1.5 font-bold text-slate-300">
-                    <span className="text-cyan-400">📟</span>
-                    <span>AGENT TELEMETRY LOG</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAutonomous(!isAutonomous)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition ${
+                        isAutonomous ? 'bg-red-500/20 text-red-400 border border-red-500/40' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      }`}
+                    >
+                      {isAutonomous ? 'Stop Agent' : 'Start Agent'}
+                    </button>
                   </div>
-                  <button 
-                    type="button" 
-                    onClick={() => setTerminalLogs([])}
-                    className="text-[10px] text-slate-500 hover:text-slate-300 underline"
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                      <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs font-semibold scrollbar-none">
+                        {categories.map((cat) => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setSelectedCategory(cat)}
+                            className={`px-3 py-1 rounded-xl whitespace-nowrap transition ${
+                              selectedCategory === cat ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                        <span className="text-slate-500 text-xs">🔍</span>
+                        <input
+                          type="text"
+                          placeholder="Search SKU or license..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="bg-transparent text-xs text-white placeholder-slate-500 outline-none w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {filteredProducts.map((prod) => (
+                        <div
+                          key={prod.id}
+                          className="bg-slate-900/90 border border-slate-800/80 hover:border-cyan-500/50 rounded-2xl p-4 flex flex-col justify-between gap-4 transition shadow-lg"
+                        >
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-mono font-bold bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
+                                {prod.sku}
+                              </span>
+                              <span className="text-[10px] font-mono text-slate-500">
+                                Seller: {prod.seller}
+                              </span>
+                            </div>
+                            <h3 className="font-bold text-white text-sm leading-snug">{prod.title}</h3>
+                            <p className="text-xs text-slate-400 leading-relaxed">{prod.description}</p>
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
+                              <span className="text-base font-extrabold text-cyan-400 font-mono">
+                                {prod.priceSol} SOL
+                              </span>
+                            </div>
+
+                            {/* MANUAL CLICK ON DESKTOP */}
+                            <button
+                              type="button"
+                              disabled={activePurchase === prod.id}
+                              onClick={() => executeBuy(prod, false)}
+                              className={`font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition active:scale-95 shadow-md ${
+                                activePurchase === prod.id ? 'bg-slate-800 text-slate-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white'
+                              }`}
+                            >
+                              {activePurchase === prod.id ? (
+                                <>
+                                  <span className="animate-spin text-xs">🌀</span>
+                                  <span>Settling...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>⚡</span>
+                                  <span>Agent Buy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Terminal Logs */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <div className="flex items-center gap-1.5 font-bold text-slate-300">
+                        <span className="text-cyan-400">📟</span>
+                        <span>AGENT TELEMETRY LOG</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setTerminalLogs([])}
+                        className="text-[10px] text-slate-500 hover:text-slate-300 underline"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="bg-[#05080f] border border-slate-800 rounded-2xl p-3 h-[460px] flex flex-col justify-between font-mono text-[11px] shadow-inner">
+                      <div className="overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                        {terminalLogs.map((log) => (
+                          <div key={log.id} className="leading-tight break-all">
+                            <span className="text-slate-600 mr-1.5">[{log.time}]</span>
+                            <span className={`font-bold mr-1.5 ${
+                              log.type === 'BOT' ? 'text-emerald-400' :
+                              log.type === 'TX' ? 'text-cyan-400' :
+                              log.type === 'KEY' ? 'text-amber-300' :
+                              log.type === 'ERR' ? 'text-red-400' :
+                              log.type === 'TRIG' ? 'text-purple-400' : 'text-blue-400'
+                            }`}>
+                              [{log.type}]
+                            </span>
+                            <span className="text-slate-300">{log.msg}</span>
+                          </div>
+                        ))}
+                        <div ref={terminalEndRef} />
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-500">
+                        <span>Cluster: Solana Devnet</span>
+                        <span className="flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                          Realtime Active
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </>
+            )}
+
+            {activeTab === 'vendor' && (
+              !isWalletConnected ? (
+                <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                    🔒
+                  </div>
+                  <h3 className="text-base font-bold text-white uppercase tracking-wider">Vendor Portal Restricted</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Merchant Dashboard access requires Solana Devnet wallet authentication.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConnectWallet}
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
                   >
-                    Clear
+                    <span>👛</span> Connect Wallet
                   </button>
                 </div>
+              ) : (
+                <VendorPortal
+                  vendorWallet={walletAddress}
+                  products={products}
+                  onAddProduct={handleAddProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                  sales={merchantSales}
+                />
+              )
+            )}
 
-                <div className="bg-[#05080f] border border-slate-800 rounded-2xl p-3 h-[460px] flex flex-col justify-between font-mono text-[11px] shadow-inner">
-                  <div className="overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                    {terminalLogs.map((log) => (
-                      <div key={log.id} className="leading-tight break-all">
-                        <span className="text-slate-600 mr-1.5">[{log.time}]</span>
-                        <span className={`font-bold mr-1.5 ${
-                          log.type === 'BOT' ? 'text-emerald-400' :
-                          log.type === 'TX' ? 'text-cyan-400' :
-                          log.type === 'KEY' ? 'text-amber-300' :
-                          log.type === 'ERR' ? 'text-red-400' :
-                          log.type === 'TRIG' ? 'text-purple-400' : 'text-blue-400'
-                        }`}>
-                          [{log.type}]
-                        </span>
-                        <span className="text-slate-300">{log.msg}</span>
-                      </div>
-                    ))}
-                    <div ref={terminalEndRef} />
+            {activeTab === 'admin' && (
+              !isWalletConnected ? (
+                <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                    🔒
                   </div>
-
-                  <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-[10px] text-slate-500">
-                    <span>Cluster: Solana Devnet</span>
-                    <span className="flex items-center gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                      Realtime Active
-                    </span>
-                  </div>
+                  <h3 className="text-base font-bold text-white uppercase tracking-wider">Admin Console Restricted</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    The Protocol Admin Console requires an authenticated Web3 signature for audit validation.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConnectWallet}
+                    className="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <span>👛</span> Connect Admin Wallet
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <AdminPortal 
+                  sales={merchantSales}
+                  onClearSales={handleClearSales}
+                  products={products}
+                  onDeleteProduct={handleDeleteProduct}
+                  onResetProducts={handleResetProducts}
+                />
+              )
+            )}
+          </main>
+        </>
+      )}
 
-            </div>
-          </>
-        )}
-
-        {activeTab === 'vendor' && (
-          !isWalletConnected ? (
-            <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-              <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                🔒
-              </div>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider">Vendor Portal Restricted</h3>
-              <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                Access to the Merchant Dashboard requires Solana Devnet Web3 wallet authentication.
-              </p>
-              <button
-                type="button"
-                onClick={handleConnectWallet}
-                className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-              >
-                <span>👛</span> Connect Wallet
-              </button>
-            </div>
-          ) : (
-            <VendorPortal
-              vendorWallet={walletAddress}
-              products={products}
-              onAddProduct={handleAddProduct}
-              onDeleteProduct={handleDeleteProduct}
-              sales={merchantSales}
-            />
-          )
-        )}
-
-        {activeTab === 'admin' && (
-          !isWalletConnected ? (
-            <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-              <div className="w-16 h-16 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                🔒
-              </div>
-              <h3 className="text-base font-bold text-white uppercase tracking-wider">Admin Console Restricted</h3>
-              <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                The Superadmin Console requires a Web3 wallet connection to verify protocol audit authority.
-              </p>
-              <button
-                type="button"
-                onClick={handleConnectWallet}
-                className="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-              >
-                <span>👛</span> Connect Admin Wallet
-              </button>
-            </div>
-          ) : (
-            <AdminPortal 
-              sales={merchantSales}
-              onClearSales={handleClearSales}
-              products={products}
-              onDeleteProduct={handleDeleteProduct}
-              onResetProducts={handleResetProducts}
-            />
-          )
-        )}
-      </main>
-
-      {/* 3. Settlement Receipt Modal */}
+      {/* 3. SETTLEMENT RECEIPT MODAL (WORKS ACROSS BOTH DESKTOP AND MOBILE) */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+          <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
             <div className="flex items-center gap-2 text-emerald-400 font-bold font-mono text-sm">
               <span>✅</span>
               <span>AUTONPAY ON-CHAIN SETTLEMENT CONFIRMED</span>
@@ -751,7 +762,7 @@ JSON.stringify({
         </div>
       )}
 
-      {/* 4. Real Database License Verifier Modal */}
+      {/* 4. REAL DATABASE LICENSE VERIFIER MODAL */}
       {isVerifyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">

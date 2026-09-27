@@ -14,21 +14,23 @@ export default function MobileView({
   setGasTank: externalSetGasTank,
   botLogs: externalBotLogs,
   setBotLogs: externalSetBotLogs,
-  // Props CRUD & Data untuk Vendor & Admin Portal
+  logs: externalLogs,
+  // Catalog, CRUD & Settlement Ledger Data
   products = [],
   onAddProduct,
   onDeleteProduct,
   onResetProducts,
   merchantSales = [],
   onClearSales,
+  onBuyProduct, // Triggers manual on-chain purchase & Solscan receipt modal
 }) {
-  // 4 Tabs in Mobile: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
+  // 4 Mobile Navigation Tabs: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
   const [currentTab, setCurrentTab] = useState('MARKET');
   
-  // Safe wallet address parsing (string or object)
+  // Safe wallet address normalization (string or object)
   const walletAddress = typeof wallet === 'string' ? wallet : wallet?.address;
 
-  // AI Agent Bot States
+  // Autonomous Agent States & Single-Source-of-Truth Fallbacks
   const [localIsBotRunning, setLocalIsBotRunning] = useState(false);
   const isBotRunning = externalIsBotRunning !== undefined ? externalIsBotRunning : localIsBotRunning;
   const setIsBotRunning = externalSetIsBotRunning || setLocalIsBotRunning;
@@ -38,22 +40,22 @@ export default function MobileView({
   const setGasTank = externalSetGasTank || setLocalGasTank;
 
   const [localBotLogs, setLocalBotLogs] = useState([
-    { time: '12:00:01', tag: 'SYS', msg: 'AutonPay M2M Settlement Rail initialized.' },
-    { time: '12:00:02', tag: 'NET', msg: 'Connected to Solana Devnet Gateway.' },
-    { time: '12:00:03', tag: 'CONF', msg: 'Payout split configured: Vendor 90% | Admin 5% | Affiliate 5%.' }
+    { id: 1, time: '12:00:01', tag: 'SYS', msg: 'AutonPay M2M Settlement Rail initialized.' },
+    { id: 2, time: '12:00:02', tag: 'NET', msg: 'Connected to Solana Devnet Gateway.' },
+    { id: 3, time: '12:00:03', tag: 'CONF', msg: 'Fee split protocol active: Vendor 90% | Admin 5% | Affiliate 5%.' }
   ]);
-  const botLogs = externalBotLogs !== undefined ? externalBotLogs : localBotLogs;
+  const botLogs = externalBotLogs || externalLogs || localBotLogs;
   const setBotLogs = externalSetBotLogs || setLocalBotLogs;
 
-  // License Key Verification Modal
+  // License Key Verification Modal States
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyKey, setVerifyKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
 
-  // M2M Autonomous Purchasing Simulation
+  // M2M Autonomous Purchasing Simulation (Runs only when not managed by App.jsx)
   useEffect(() => {
     let interval = null;
-    if (isBotRunning) {
+    if (isBotRunning && !externalBotLogs) {
       interval = setInterval(() => {
         const time = new Date().toLocaleTimeString('en-US');
         const price = 0.050; // 0.05 SOL
@@ -62,24 +64,23 @@ export default function MobileView({
           if (prev < price) {
             setIsBotRunning(false);
             setBotLogs((l) => [
-              { time, tag: 'ERR', msg: 'Gas Tank depleted. Auto-pilot paused.' },
+              { id: Date.now(), time, tag: 'ERR', msg: 'Agent Gas Tank depleted. Auto-pilot paused.' },
               ...l.slice(0, 7)
             ]);
             return prev;
           }
 
-          // Eksekusi pemotongan saldo dan pencatatan transaksi
           const updatedGas = parseFloat((prev - price).toFixed(3));
           const vendorCut = (price * 0.90).toFixed(4);
           const adminCut = (price * 0.05).toFixed(4);
           const affiliateCut = (price * 0.05).toFixed(4);
-          const txHash = '5wK' + Math.random().toString(36).substring(2, 6);
+          const txHash = '5wK' + Math.random().toString(36).substring(2, 6) + 'dev';
           const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 7).toUpperCase() + '-SOL';
 
           setBotLogs((l) => [
-            { time, tag: 'KEY', msg: `License issued: ${generatedKey} -> Injected into agent.` },
-            { time, tag: 'TX', msg: `Tx: ${txHash}... | Vendor: +${vendorCut} SOL | Admin: +${adminCut} SOL | Affiliate: +${affiliateCut} SOL` },
-            { time, tag: 'M2M', msg: `AI quota low. Auto-purchased API-LLM-10M (${price} SOL)` },
+            { id: Date.now() + 1, time, tag: 'KEY', msg: `License issued: ${generatedKey} -> Injected into agent.` },
+            { id: Date.now() + 2, time, tag: 'TX', msg: `Tx: ${txHash}... | Vendor: +${vendorCut} SOL | Admin: +${adminCut} SOL | Affiliate: +${affiliateCut} SOL` },
+            { id: Date.now() + 3, time, tag: 'M2M', msg: `AI quota low. Auto-purchased API-LLM-10M (${price} SOL)` },
             ...l.slice(0, 6)
           ]);
 
@@ -88,7 +89,7 @@ export default function MobileView({
       }, 6500);
     }
     return () => clearInterval(interval);
-  }, [isBotRunning]);
+  }, [isBotRunning, externalBotLogs, setIsBotRunning, setGasTank, setBotLogs]);
 
   const handleVerify = (e) => {
     e.preventDefault();
@@ -125,7 +126,7 @@ export default function MobileView({
               }`}
             >
               <span>{walletAddress ? '🟢' : '👛'}</span>
-              <span>{walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Connect'}</span>
+              <span>{walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Connect Wallet'}</span>
             </button>
           </div>
 
@@ -205,14 +206,73 @@ export default function MobileView({
         {/* ======================================================== */}
         <div className="flex-1 w-full mt-1">
           
-          {/* --- TAB 1: MARKETPLACE --- */}
+          {/* --- TAB 1: MARKETPLACE & MANUAL COMPUTE PURCHASES --- */}
           {currentTab === 'MARKET' && (
-            <div className="w-full">
-              <PayFiStore solPriceUsd={solPriceUsd} />
+            <div className="w-full space-y-3.5">
+              <PayFiStore 
+                solPriceUsd={solPriceUsd} 
+                products={products}
+                onBuyProduct={onBuyProduct}
+                walletAddress={walletAddress}
+                onConnectWallet={onConnectWallet}
+              />
+
+              {/* Mobile Manual Buy Catalog */}
+              {products && products.length > 0 && (
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 px-1">
+                    <span>AVAILABLE COMPUTE LICENSES</span>
+                    <span className="text-[10px] text-cyan-400">90/5/5 Split Rail</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {products.map((prod) => (
+                      <div
+                        key={prod.id}
+                        className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between gap-3 shadow-md hover:border-cyan-500/40 transition"
+                      >
+                        <div>
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
+                              {prod.sku}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-500">
+                              Seller: {prod.seller || 'Verified'}
+                            </span>
+                          </div>
+                          <h3 className="font-bold text-white text-xs leading-snug">{prod.title}</h3>
+                          <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                            {prod.description}
+                          </p>
+                        </div>
+
+                        <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
+                          <div>
+                            <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
+                            <span className="text-sm font-extrabold text-cyan-400 font-mono">
+                              {prod.priceSol} SOL
+                            </span>
+                          </div>
+
+                          {/* INI TOMBOL KLIK MANUAL DI HP (MEMICU POP-UP SOLSCAN) */}
+                          <button
+                            type="button"
+                            onClick={() => onBuyProduct && onBuyProduct(prod)}
+                            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white font-mono font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-md flex items-center gap-1.5 transition"
+                          >
+                            <span>⚡</span>
+                            <span>Buy License</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* --- TAB 2: AGENT BOT SIMULATOR --- */}
+          {/* --- TAB 2: AGENT BOT SIMULATOR & TELEMETRY --- */}
           {currentTab === 'BOT' && (
             <div className="space-y-3">
               <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 shadow-md space-y-3">
@@ -223,7 +283,7 @@ export default function MobileView({
                       {isBotRunning ? 'AUTONOMOUS ACTIVE' : 'AGENT DAEMON IDLE'}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">Devnet</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Solana Devnet</span>
                 </div>
 
                 <div>
@@ -231,7 +291,7 @@ export default function MobileView({
                     Machine-to-Machine Autonomous Buyer
                   </h2>
                   <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">
-                    Daemon monitors quotas, deducts Gas Tank, and autonomously executes on-chain split fees.
+                    Daemon monitors API quotas, deducts Gas Tank, and autonomously executes on-chain 90/5/5 split fees.
                   </p>
                 </div>
 
@@ -273,7 +333,7 @@ export default function MobileView({
               </div>
 
               {/* M2M Telemetry Feed */}
-              <div className="bg-[#070d19] border border-slate-800/80 rounded-2xl p-3 font-mono text-[11px] space-y-2">
+              <div className="bg-[#070d19] border border-slate-800/80 rounded-2xl p-3 font-mono text-[11px] space-y-2 shadow-inner">
                 <div className="text-slate-400 font-bold flex items-center justify-between pb-1.5 border-b border-slate-800/80">
                   <span className="flex items-center gap-1.5">
                     <span>📟</span> <span>M2M Execution Telemetry</span>
@@ -288,20 +348,24 @@ export default function MobileView({
                 </div>
                 
                 <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                  {botLogs.map((log, idx) => (
-                    <div key={idx} className="leading-tight break-all">
-                      <span className="text-slate-600 mr-1.5">[{log.time}]</span>
-                      <span className={`font-bold mr-1.5 ${
-                        log.tag === 'M2M' ? 'text-purple-400' :
-                        log.tag === 'TX' ? 'text-emerald-400' :
-                        log.tag === 'KEY' ? 'text-amber-300' :
-                        log.tag === 'ERR' ? 'text-rose-400' : 'text-cyan-400'
-                      }`}>
-                        [{log.tag}]
-                      </span>
-                      <span className="text-slate-300">{log.msg}</span>
-                    </div>
-                  ))}
+                  {botLogs.map((log, idx) => {
+                    const tag = log.tag || log.type || 'SYS';
+                    return (
+                      <div key={log.id || idx} className="leading-tight break-all">
+                        <span className="text-slate-600 mr-1.5">[{log.time}]</span>
+                        <span className={`font-bold mr-1.5 ${
+                          tag === 'M2M' || tag === 'TRIG' ? 'text-purple-400' :
+                          tag === 'TX' ? 'text-emerald-400' :
+                          tag === 'KEY' ? 'text-amber-300' :
+                          tag === 'ERR' ? 'text-rose-400' :
+                          tag === 'BOT' ? 'text-emerald-400' : 'text-cyan-400'
+                        }`}>
+                          [{tag}]
+                        </span>
+                        <span className="text-slate-300">{log.msg}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -389,7 +453,7 @@ export default function MobileView({
             <div className="bg-[#0b1222] border border-slate-800 w-full max-w-sm rounded-2xl p-4 shadow-2xl space-y-3">
               <div className="flex justify-between items-center pb-2 border-b border-slate-800">
                 <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5 font-mono">
-                  <span>🔍</span> Verify License
+                  <span>🔍</span> Verify License Key
                 </span>
                 <button
                   type="button"
