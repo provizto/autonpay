@@ -222,7 +222,7 @@ export default function AdminPortal({
                 {sales.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="py-6 text-center text-slate-500 text-xs">
-                      Belum ada riwayat transaksi on-chain.
+                      No on-chain settlement records found.
                     </td>
                   </tr>
                 ) : (
@@ -236,9 +236,13 @@ export default function AdminPortal({
                       <td className="py-2.5 text-purple-400">+{(sale.affiliateFeeSol || sale.grossSol * 0.05).toFixed(4)} SOL</td>
                       <td className="py-2.5">
                         <a
-                          href="https://explorer.solana.com/?cluster=devnet"
+                          href={
+                            sale.signature || sale.txSignature
+                              ? `https://solscan.io/tx/${sale.signature || sale.txSignature}?cluster=devnet`
+                              : 'https://solscan.io/?cluster=devnet'
+                          }
                           target="_blank"
-                          rel="noreferrer"
+                          rel="noopener noreferrer"
                           className="text-cyan-400 underline text-[10px] hover:text-cyan-300"
                         >
                           Solscan ↗
