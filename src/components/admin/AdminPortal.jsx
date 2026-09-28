@@ -179,24 +179,6 @@ export default function AdminPortal({
             </form>
           </div>
 
-          <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-2">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Marketplace Maintenance</span>
-            <p className="text-[11px] text-slate-500 font-sans leading-relaxed">
-              Kembalikan katalog produk demo ke daftar default awal jika pengujian selesai.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                if (window.confirm('Kembalikan semua katalog produk ke data default awal?')) {
-                  onResetProducts?.();
-                }
-              }}
-              className="w-full bg-slate-950 hover:bg-slate-800 border border-slate-700 text-slate-300 font-bold py-2 rounded-xl text-xs transition"
-            >
-              🔄 Reset Products to Initial State
-            </button>
-          </div>
-
         </div>
 
         {/* Kolom Kanan: Global Protocol Ledger Monitor */}
