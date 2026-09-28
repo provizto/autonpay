@@ -285,11 +285,14 @@ export default function MobileView({
 
                       <button
                         type="button"
-                        onClick={() => onBuyProduct?.(p)}
-                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white font-mono font-bold text-xs px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow"
+                        onClick={() => {
+                          if (onBuyProduct) {
+                          onBuyProduct(product);
+                          }
+                        }}
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 shadow-md"
                       >
-                        <span>⚡</span>
-                        <span>Buy</span>
+                        ⚡ Buy
                       </button>
                     </div>
                   </div>
