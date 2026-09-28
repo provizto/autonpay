@@ -196,23 +196,23 @@ export default function AdminPortal({
               <span>Verified Vendor Whitelist</span>
             </h3>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              Hanya wallet di daftar ini yang memiliki izin untuk menjual/mengedit produk di Vendor Portal.
+              Only authenticated wallet addresses on this whitelist are authorized to publish and manage compute licenses.
             </p>
           </div>
 
-          {/* Tombol Cepat: Daftarkan dompet yang sedang connect */}
+          {/* Quick Button: Authorize currently connected wallet */}
           {currentWallet && !whitelistedVendors.includes(currentWallet) && (
             <button
               type="button"
               onClick={() => onAddVendor && onAddVendor(currentWallet)}
               className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1"
             >
-              <span>⚡</span> Izinkan Wallet Saya Saat Ini
+              <span>⚡</span> Authorize Current Wallet
             </button>
           )}
         </div>
 
-        {/* Input Wallet Manual */}
+        {/* Input Form */}
         <form 
           onSubmit={(e) => {
             e.preventDefault();
@@ -225,7 +225,7 @@ export default function AdminPortal({
         >
           <input
             type="text"
-            placeholder="Paste public key Solana vendor baru..."
+            placeholder="Paste new Solana vendor public key..."
             value={newVendorInput}
             onChange={(e) => setNewVendorInput(e.target.value)}
             className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none focus:border-cyan-500"
@@ -233,13 +233,13 @@ export default function AdminPortal({
           />
           <button
             type="submit"
-            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-mono text-xs px-4 py-2 rounded-xl transition"
+            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-mono text-xs px-4 py-2 rounded-xl transition whitespace-nowrap"
           >
-            + Tambah Vendor
+            + Add Vendor
           </button>
         </form>
 
-        {/* Daftar Vendor Aktif */}
+        {/* Active Vendor Badges */}
         <div className="flex flex-wrap gap-2 pt-1">
           {whitelistedVendors.map((w) => (
             <div 
@@ -253,7 +253,7 @@ export default function AdminPortal({
                   type="button"
                   onClick={() => onRemoveVendor && onRemoveVendor(w)}
                   className="text-red-400 hover:text-red-300 ml-1 text-xs"
-                  title="Hapus Vendor"
+                  title="Revoke Vendor Access"
                 >
                   ✕
                 </button>

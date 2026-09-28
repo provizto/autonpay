@@ -127,16 +127,16 @@ useEffect(() => {
     const cleanWallet = newWallet.trim();
     if (!cleanWallet) return;
     if (whitelistedVendors.includes(cleanWallet)) {
-      alert('Wallet ini sudah terdaftar sebagai vendor!');
+      alert('This wallet is already registered as a verified vendor!');
       return;
     }
     setWhitelistedVendors((prev) => [...prev, cleanWallet]);
-    addLog('SYS', `Wallet [${cleanWallet.slice(0, 6)}...] resmi menjadi Verified Vendor.`);
+    addLog('SYS', `Wallet [${cleanWallet.slice(0, 6)}...] added to Verified Vendor whitelist.`);
   };
 
   const handleRemoveVendor = (targetWallet) => {
     setWhitelistedVendors((prev) => prev.filter((w) => w !== targetWallet));
-    addLog('SYS', `Akses vendor untuk [${targetWallet.slice(0, 6)}...] dicabut.`);
+    addLog('SYS', `Vendor access revoked for [${targetWallet.slice(0, 6)}...].`);
   };
 
   const addLog = (type, msg) => {
