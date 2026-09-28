@@ -84,6 +84,23 @@ useEffect(() => {
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
   const isAdmin = isWalletConnected && walletAddress === DEFAULT_ADMIN_WALLET;
 
+  // Tangkap alamat wallet referral dari URL (?ref=...)
+  const [referrerWallet, setReferrerWallet] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const refParam = params.get('ref');
+      if (refParam) {
+        try {
+          new PublicKey(refParam); // Validasi apakah format public key Solana sah
+          return refParam;
+        } catch (e) {
+          console.warn('Invalid referral wallet in URL, fallback to default.');
+        }
+      }
+    }
+    return DEFAULT_AFFILIATE_WALLET;
+  });
+
   // Strict Verification: Only whitelisted merchants can access Vendor Console
   const isVendor = isWalletConnected && WHITELISTED_VENDORS.includes(walletAddress);
 
@@ -370,7 +387,7 @@ const handleClearSales = async () => {
         transaction.add(
           SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(product.vendorWallet || DEFAULT_VENDOR_WALLET), lamports: vendorLamports }),
           SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(DEFAULT_ADMIN_WALLET), lamports: adminLamports }),
-          SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(DEFAULT_AFFILIATE_WALLET), lamports: affiliateLamports })
+          SystemProgram.transfer({ fromPubkey: buyerPubkey, toPubkey: new PublicKey(referrerWallet || DEFAULT_AFFILIATE_WALLET), lamports: affiliateLamports })
         );
 
         const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
@@ -612,6 +629,20 @@ const handleClearSales = async () => {
                       : 'Connect Wallet'}
                   </span>
                 </button>
+                {isWalletConnected && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shareUrl = `${window.location.origin}?ref=${walletAddress}`;
+                      navigator.clipboard.writeText(shareUrl);
+                      alert(`Referral Link copied!\n\n${shareUrl}\n\nBagikan link ini. Anda otomatis mendapatkan 5% SOL instan ke wallet Anda setiap ada yang membeli!`);
+                    }}
+                    className="bg-purple-950/70 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow"
+                    title="Salin Link Referral Anda"
+                  >
+                    <span>🔗</span> <span>Earn 5%</span>
+                  </button>
+                )}
               </div>
             </div>
           </header>
