@@ -531,7 +531,7 @@ export default function App() {
   });
 
   return (
-    <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans pb-16">
+    <div className="min-h-screen bg-[#060a12] text-slate-100 font-sans flex flex-col justify-between">
       
       {/* MOBILE INTERFACE */}
       {isMobile ? (
@@ -658,7 +658,7 @@ export default function App() {
             </div>
           </header>
 
-          <main className="max-w-6xl mx-auto px-4 mt-6 space-y-6">
+          <main className="flex-1 max-w-6xl w-full mx-auto px-4 mt-6 space-y-6">
             {activeTab === 'marketplace' && (
               <>
                 <div className="bg-gradient-to-r from-blue-950/40 via-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
