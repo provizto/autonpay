@@ -13,7 +13,7 @@ export const connection = new Connection(
 );
 
 // Wallet Penampung Platform / Admin (Ganti jika ada wallet khusus)
-const PROTOCOL_ADMIN_VAULT = 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny';
+const PROTOCOL_ADMIN_VAULT = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
 
 // Wallet Fallback untuk Affiliate jika pembeli tidak membawa kode referral
 const DEFAULT_AFFILIATE_VAULT = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
