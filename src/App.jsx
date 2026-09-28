@@ -1213,7 +1213,7 @@ JSON.stringify({
       )}
 
       {/* FOOTER */}
-      {!isMobile && <Footer />}
+      <Footer />
 
     </div>
   );
