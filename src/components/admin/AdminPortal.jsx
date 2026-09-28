@@ -11,8 +11,14 @@ export default function AdminPortal({
   onClearSales, 
   products = [], 
   onDeleteProduct, 
-  onResetProducts 
+  onResetProducts,
+  currentWallet = '',
+  whitelistedVendors = [],
+  onAddVendor,
+  onRemoveVendor
 }) {
+  const [newVendorInput, setNewVendorInput] = useState('');
+
   const [adminTreasury, setAdminTreasury] = useState(
     ADMIN_WALLET_ADDRESS ? ADMIN_WALLET_ADDRESS.toString() : PROTOCOL_ADMIN_WALLET
   );
@@ -180,6 +186,82 @@ export default function AdminPortal({
           </div>
 
         </div>
+
+        {/* KOTAK MANAJEMEN VENDOR TERPERCAYA */}
+      <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-3 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-800 pb-2">
+          <div>
+            <h3 className="text-xs font-bold text-white font-mono uppercase tracking-wider flex items-center gap-1.5">
+              <span>🛡️</span>
+              <span>Verified Vendor Whitelist</span>
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Hanya wallet di daftar ini yang memiliki izin untuk menjual/mengedit produk di Vendor Portal.
+            </p>
+          </div>
+
+          {/* Tombol Cepat: Daftarkan dompet yang sedang connect */}
+          {currentWallet && !whitelistedVendors.includes(currentWallet) && (
+            <button
+              type="button"
+              onClick={() => onAddVendor && onAddVendor(currentWallet)}
+              className="bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/50 text-emerald-300 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition flex items-center gap-1"
+            >
+              <span>⚡</span> Izinkan Wallet Saya Saat Ini
+            </button>
+          )}
+        </div>
+
+        {/* Input Wallet Manual */}
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (onAddVendor && newVendorInput) {
+              onAddVendor(newVendorInput);
+              setNewVendorInput('');
+            }
+          }} 
+          className="flex gap-2"
+        >
+          <input
+            type="text"
+            placeholder="Paste public key Solana vendor baru..."
+            value={newVendorInput}
+            onChange={(e) => setNewVendorInput(e.target.value)}
+            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-white outline-none focus:border-cyan-500"
+            required
+          />
+          <button
+            type="submit"
+            className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-mono text-xs px-4 py-2 rounded-xl transition"
+          >
+            + Tambah Vendor
+          </button>
+        </form>
+
+        {/* Daftar Vendor Aktif */}
+        <div className="flex flex-wrap gap-2 pt-1">
+          {whitelistedVendors.map((w) => (
+            <div 
+              key={w} 
+              className="bg-slate-950 border border-slate-800 px-2.5 py-1.5 rounded-xl flex items-center gap-2 text-[11px] font-mono"
+            >
+              <span className="text-emerald-400">✓</span>
+              <span className="text-slate-300 font-bold">{w.slice(0, 4)}...{w.slice(-4)}</span>
+              {whitelistedVendors.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => onRemoveVendor && onRemoveVendor(w)}
+                  className="text-red-400 hover:text-red-300 ml-1 text-xs"
+                  title="Hapus Vendor"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
         {/* Kolom Kanan: Global Protocol Ledger Monitor */}
         <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg font-mono">

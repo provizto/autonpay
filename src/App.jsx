@@ -110,6 +110,35 @@ useEffect(() => {
   // Sales Ledger
   const [merchantSales, setMerchantSales] = useState([]);
 
+  // Whitelist Vendor Terpercaya (Tersimpan otomatis di browser)
+  const [whitelistedVendors, setWhitelistedVendors] = useState(() => {
+    const saved = localStorage.getItem('autonpay_vendors');
+    return saved ? JSON.parse(saved) : [
+      '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB', // Vendor Default
+      '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'  // Admin Wallet
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('autonpay_vendors', JSON.stringify(whitelistedVendors));
+  }, [whitelistedVendors]);
+
+  const handleAddVendor = (newWallet) => {
+    const cleanWallet = newWallet.trim();
+    if (!cleanWallet) return;
+    if (whitelistedVendors.includes(cleanWallet)) {
+      alert('Wallet ini sudah terdaftar sebagai vendor!');
+      return;
+    }
+    setWhitelistedVendors((prev) => [...prev, cleanWallet]);
+    addLog('SYS', `Wallet [${cleanWallet.slice(0, 6)}...] resmi menjadi Verified Vendor.`);
+  };
+
+  const handleRemoveVendor = (targetWallet) => {
+    setWhitelistedVendors((prev) => prev.filter((w) => w !== targetWallet));
+    addLog('SYS', `Akses vendor untuk [${targetWallet.slice(0, 6)}...] dicabut.`);
+  };
+
   const addLog = (type, msg) => {
     const time = new Date().toLocaleTimeString('en-US');
     setTerminalLogs((prev) => [...prev.slice(-35), { id: Date.now() + Math.random(), time, type, msg }]);
@@ -834,6 +863,10 @@ const handleClearSales = async () => {
       products={products}
       onDeleteProduct={handleDeleteProduct}
       onResetProducts={handleResetProducts}
+      currentWallet={walletAddress}
+      whitelistedVendors={whitelistedVendors}
+      onAddVendor={handleAddVendor}
+      onRemoveVendor={handleRemoveVendor}
     />
   )
 )}
