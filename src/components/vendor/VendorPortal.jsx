@@ -23,6 +23,10 @@ export default function VendorPortal({
   // State Modal Edit Produk
   const [editingProduct, setEditingProduct] = useState(null);
 
+  // State Modal Panduan Kategori (Bilingual: EN & ID)
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [categoryGuideLang, setCategoryGuideLang] = useState('en');
+
   // Perhitungan Keuangan Vendor (90% Hak Vendor)
   const vendorSales = sales;
   const totalGross = vendorSales.reduce((acc, s) => acc + (s.grossSol || 0), 0);
@@ -166,7 +170,17 @@ export default function VendorPortal({
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] text-slate-400 block mb-1">CATEGORY</label>
+                {/* Header Label + Tombol Panduan Kategori */}
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] text-slate-400 uppercase">CATEGORY</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCategoryModal(true)}
+                    className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition underline decoration-dotted"
+                  >
+                    <span>ℹ️</span> <span>Guide</span>
+                  </button>
+                </div>
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -363,7 +377,16 @@ export default function VendorPortal({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] text-slate-400 block mb-1">CATEGORY</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-slate-400 uppercase">CATEGORY</label>
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryModal(true)}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 underline"
+                    >
+                      Guide
+                    </button>
+                  </div>
                   <select
                     value={editingProduct.category}
                     onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
@@ -428,6 +451,122 @@ export default function VendorPortal({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 5. MODAL PANDUAN KATEGORI (BILINGUAL: EN & ID) */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-[#0b1222] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl font-sans">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📚</span>
+                <div>
+                  <h3 className="text-sm font-bold text-white font-mono uppercase">
+                    {categoryGuideLang === 'en' ? 'Category Selection Guide' : 'Panduan Pemilihan Kategori'}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {categoryGuideLang === 'en' ? 'Choose the best classification for your asset' : 'Pilih klasifikasi yang tepat untuk aset digital Anda'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Language Switcher EN / ID */}
+              <div className="flex bg-slate-950 border border-slate-800 rounded-lg p-0.5 text-[10px] font-mono">
+                <button
+                  type="button"
+                  onClick={() => setCategoryGuideLang('en')}
+                  className={`px-2 py-0.5 rounded transition ${categoryGuideLang === 'en' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCategoryGuideLang('id')}
+                  className={`px-2 py-0.5 rounded transition ${categoryGuideLang === 'id' ? 'bg-cyan-600 text-white font-bold' : 'text-slate-400 hover:text-white'}`}
+                >
+                  ID
+                </button>
+              </div>
+            </div>
+
+            {/* List Penjelasan Kategori */}
+            <div className="space-y-2.5 max-h-[60vh] overflow-y-auto pr-1 text-xs font-mono">
+              
+              {/* 1. Google Drive / Files */}
+              <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl">
+                <div className="font-bold text-amber-300 flex items-center gap-1.5 mb-1">
+                  <span>📁</span> <span>Google Drive / Files</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  {categoryGuideLang === 'en'
+                    ? 'Use for downloadable archives via cloud storage links: ZIP source bundles, PDF guides, installer packages, datasets, or media assets.'
+                    : 'Gunakan untuk arsip yang diunduh melalui link penyimpanan cloud: paket arsip ZIP, panduan PDF, installer software, dataset, atau aset media.'}
+                </p>
+              </div>
+
+              {/* 2. Source Code & Repo */}
+              <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl">
+                <div className="font-bold text-cyan-300 flex items-center gap-1.5 mb-1">
+                  <span>💻</span> <span>Source Code & Repo</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  {categoryGuideLang === 'en'
+                    ? 'Use for complete application codebases, GitHub/GitLab repository invitations, boilerplates, and developer scripts (e.g., NewsPortal CMS, Web3 Bots).'
+                    : 'Gunakan untuk full source code aplikasi, link repositori privat GitHub/GitLab, boilerplate, dan skrip developer (contoh: NewsPortal CMS, Bot Web3).'}
+                </p>
+              </div>
+
+              {/* 3. Compute & LLM */}
+              <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl">
+                <div className="font-bold text-orange-400 flex items-center gap-1.5 mb-1">
+                  <span>⚡</span> <span>Compute & LLM</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  {categoryGuideLang === 'en'
+                    ? 'Use for AI model inference quotas, high-throughput LLM token gateways, GPU clusters, and execution runtime environments for AI agents.'
+                    : 'Gunakan untuk kuota inferensi model AI, gateway streaming token LLM, kluster GPU, dan lingkungan runtime eksekusi untuk agen AI otonom.'}
+                </p>
+              </div>
+
+              {/* 4. Data Feeds */}
+              <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl">
+                <div className="font-bold text-emerald-400 flex items-center gap-1.5 mb-1">
+                  <span>📊</span> <span>Data Feeds</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  {categoryGuideLang === 'en'
+                    ? 'Use for real-time WebSocket/gRPC streams, crypto price oracles, smart-money wallet trackers, and automated market sentiment telemetry.'
+                    : 'Gunakan untuk stream real-time WebSocket/gRPC, oracle harga kripto, tracker dompet whale/smart-money, dan sinyal sentimen pasar.'}
+                </p>
+              </div>
+
+              {/* 5. Smart Contracts */}
+              <div className="bg-slate-950/70 border border-slate-800 p-2.5 rounded-xl">
+                <div className="font-bold text-purple-400 flex items-center gap-1.5 mb-1">
+                  <span>📜</span> <span>Smart Contracts</span>
+                </div>
+                <p className="text-[11px] text-slate-300 font-sans leading-relaxed">
+                  {categoryGuideLang === 'en'
+                    ? 'Use for verified Solana Anchor programs, pre-audited smart contract modules, on-chain governance tooling, and protocol deployment scripts.'
+                    : 'Gunakan untuk program Solana Anchor, modul kontrak pintar yang sudah diaudit, tooling tata kelola on-chain, dan skrip deploy protokol.'}
+                </p>
+              </div>
+
+            </div>
+
+            {/* Tombol Tutup */}
+            <button
+              type="button"
+              onClick={() => setShowCategoryModal(false)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-white font-mono font-bold text-xs py-2 rounded-xl transition"
+            >
+              {categoryGuideLang === 'en' ? 'Close Guide' : 'Tutup Panduan'}
+            </button>
+
           </div>
         </div>
       )}
