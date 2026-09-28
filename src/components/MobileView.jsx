@@ -6,6 +6,8 @@ import { verifyLicenseOnDb } from '../services/settlements';
 
 export default function MobileView({
   wallet,
+  isAdmin = false,
+  isVendor = false,
   onConnectWallet,
   solPriceUsd = 145,
   isBotRunning: externalIsBotRunning,
@@ -373,79 +375,91 @@ export default function MobileView({
             </div>
           )}
 
-          {/* TAB 3: VENDOR PORTAL */}
-          {currentTab === 'VENDOR' && (
-            <div className="w-full">
-              {!walletAddress ? (
-                <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
-                  <div className="w-12 h-12 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-                    🔒
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                      Vendor Console Restricted
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-                      Connect your Solana Devnet wallet to register new API licenses and track 90% direct payouts.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onConnectWallet}
-                    className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> Connect Vendor Wallet
-                  </button>
-                </div>
-              ) : (
-                <VendorPortal
-                  vendorWallet={walletAddress}
-                  products={products}
-                  onAddProduct={onAddProduct}
-                  onUpdateProduct={onUpdateProduct}
-                  onDeleteProduct={onDeleteProduct}
-                  sales={merchantSales}
-                />
-              )}
-            </div>
-          )}
-
-          {/* TAB 4: ADMIN CONSOLE */}
-          {currentTab === 'ADMIN' && (
-            <div className="w-full">
-              {!walletAddress ? (
-                <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
-                  <div className="w-12 h-12 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-                    🔒
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                      Admin Console Restricted
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-                      Accessing protocol audit logs and fee allocations requires Solana wallet authentication.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={onConnectWallet}
-                    className="w-full bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> Connect Admin Wallet
-                  </button>
-                </div>
-              ) : (
-                <AdminPortal
-                  sales={merchantSales}
-                  onClearSales={onClearSales}
-                  products={products}
-                  onDeleteProduct={onDeleteProduct}
-                  onResetProducts={onResetProducts}
-                />
-              )}
-            </div>
-          )}
+          {/* --- TAB 3: VENDOR PORTAL (VERIFIED MERCHANTS ONLY) --- */}
+{currentTab === 'VENDOR' && (
+  <div className="w-full">
+    {!isVendor ? (
+      <div className="bg-[#0b1222] border border-cyan-900/50 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
+        <div className="w-12 h-12 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+          🛡️
         </div>
+        <div>
+          <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+            Verified Merchant Portal
+          </h3>
+          <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
+            {walletAddress ? (
+              <>
+                Wallet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> is a standard buyer account and is not whitelisted for merchant asset creation.
+              </>
+            ) : (
+              'Please connect an approved vendor wallet to access catalog and revenue management.'
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onConnectWallet}
+          className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2.5 rounded-xl transition shadow flex items-center justify-center gap-2"
+        >
+          <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+        </button>
+      </div>
+    ) : (
+      <VendorPortal
+        vendorWallet={walletAddress}
+        products={products}
+        onAddProduct={onAddProduct}
+        onUpdateProduct={onUpdateProduct}
+        onDeleteProduct={onDeleteProduct}
+        sales={merchantSales}
+      />
+    )}
+  </div>
+)}
+
+          {/* TAB 4: ADMIN CONSOLE (TERKUNCI KETAT) */}
+{currentTab === 'ADMIN' && (
+  <div className="w-full">
+    {!isAdmin ? (
+      <div className="bg-[#0b1222] border border-red-900/50 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
+        <div className="w-12 h-12 mx-auto bg-slate-900 border border-red-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+          ⛔
+        </div>
+        <div>
+          <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
+            Access Denied: Admin Only
+          </h3>
+          <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
+            {walletAddress ? (
+              <>
+                Dompet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> tidak memiliki izin administrator.
+              </>
+            ) : (
+              'Silakan hubungkan dompet resmi Admin untuk membuka panel audit.'
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onConnectWallet}
+          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow flex items-center justify-center gap-2"
+        >
+          <span>👛</span> {walletAddress ? 'Switch Wallet' : 'Connect Admin Wallet'}
+        </button>
+      </div>
+    ) : (
+      <AdminPortal
+        sales={merchantSales}
+        onClearSales={onClearSales}
+        products={products}
+        onDeleteProduct={onDeleteProduct}
+        onResetProducts={onResetProducts}
+      />
+    )}
+  </div>
+)}
+</div>
 
         {/* VERIFY MODAL */}
         {showVerifyModal && (

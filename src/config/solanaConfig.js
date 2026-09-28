@@ -15,7 +15,15 @@ export const DEFAULT_AFFILIATE_ADDRESS = new PublicKey(
   'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh'
 );
 
-// Standard Solana Memo Program ID (Untuk mencatat ID lisensi on-chain)
+// 1. Standard Solana SPL Memo Program ID (Wajib untuk eksekusi runtime memo transaksi di Devnet/Mainnet)
 export const MEMO_PROGRAM_ID = new PublicKey(
+  'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr'
+);
+
+// 2. AutonPay Protocol Custom Program ID (Sesuai yang terdaftar di dokumen autonpay_proposal)
+export const AUTONPAY_PROGRAM_ID = new PublicKey(
   'HVHRr2JbMAT1zQ8N2vuWKctfV3ycvQYdDDzob1nqd6jD'
 );
+
+// Alias kompatibilitas jika ada file lain yang memanggil nama lama
+export const AUTONPAY_MEMO_PROGRAM_ID = AUTONPAY_PROGRAM_ID;

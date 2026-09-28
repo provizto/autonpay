@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ZONIQFI ($ZQI) — Technical Grant Proposal</title>
+  <title>AUTONPAY ($AUTON) — Technical Grant Proposal</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -239,7 +239,7 @@
     <!-- Print Control Bar -->
     <div class="print-bar">
       <div class="print-bar-info">
-        <strong>ZoniqFi Technical Grant Proposal</strong>
+        <strong>AutonPay Technical Grant Proposal</strong>
         <span>Click button or press Ctrl + P to export directly to A4 PDF.</span>
       </div>
       <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
@@ -250,8 +250,8 @@
       <table class="header-table" style="border:none;">
         <tr>
           <td>
-            <div class="title">ZONIQFI ($ZQI)</div>
-            <div class="subtitle">Solana Transaction v1 Suite, PayFi Commerce & Real Yield Infrastructure</div>
+            <div class="title">AUTONPAY ($AUTON)</div>
+            <div class="subtitle">Autonomous Machine-to-Machine PayFi Rail & Instant 90/5/5 Settlement Protocol</div>
           </td>
           <td style="text-align: right; vertical-align: top;">
             <span class="badge">Colosseum & Superteam Grant Ready</span>
@@ -261,104 +261,119 @@
 
       <h2>1. Executive Summary</h2>
       <p>
-        <strong>ZONIQFI</strong> is a modular DeFi & PayFi infrastructure protocol on Solana bridging retail commerce with high-velocity on-chain settlement. Utilizing <strong>Solana Transaction v1 architecture (4,096-byte atomic payload)</strong> and <strong>Pyth Network Oracles</strong> for real-time valuation, the protocol combines MEV-protected liquidity swaps via Jito Block Engine, automated yield vaults, and a non-custodial <strong>PayFi Gateway</strong>. Merchants receive 100% fiat payouts directly via personal QRIS, while an automated on-chain <strong>Prepaid SOL Gas Tank</strong> debits and splits protocol fees across four on-chain vaults with hard guardrail protections.
+        <strong>AUTONPAY</strong> is an autonomous, high-throughput PayFi infrastructure protocol natively built on Solana. Designed for both autonomous AI agents (M2M) and human commerce, AutonPay eliminates manual invoicing and payment gateway fees through an on-chain <strong>Atomic 90/5/5 Fee Split Rail</strong>. When compute licenses, API credits, or digital assets are purchased, transactions execute deterministically in a single atomic bundle: <strong>90% goes instantly to the asset vendor</strong>, <strong>5% to the protocol admin treasury</strong>, and <strong>5% to the affiliate partner</strong>. Autonomous agents operate without friction using a dedicated <strong>Prepaid SOL Gas Tank</strong>, while all purchases receive cryptographic proof via Solana SPL Memo and automated license generation.
       </p>
 
       <h2>2. Problem Statement & Market Inefficiencies</h2>
       <ul>
-        <li><strong>Onboarding & Gas Friction for Merchants:</strong> Web2 merchants in emerging markets cannot navigate complex token swaps, crypto volatility, or gas management simply to accept payments.</li>
-        <li><strong>Pervasive MEV Exploitation:</strong> Arbitrage and sandwich bots in public mempools extract substantial value from retail traders.</li>
-        <li><strong>Custodial Intermediary Risk:</strong> Centralized payment gateways charge heavy fees (2–4%) and impose multi-day settlement delays on merchant revenue.</li>
-        <li><strong>Inflationary Farm Vulnerabilities:</strong> Traditional AMMs rely on hyper-inflationary token emissions rather than real-world commercial fee cashflow.</li>
+        <li><strong>Friction in Agent-to-Agent (M2M) Commerce:</strong> Autonomous AI agents consuming decentralized LLMs, compute clusters, and data feeds cannot use credit cards or traditional payment rails to renew access quotas.</li>
+        <li><strong>Centralized Custodial Intermediaries:</strong> Traditional SaaS checkout platforms withhold merchant payouts for 7–30 days and take excessive commissions (5–15%).</li>
+        <li><strong>Fragmented Multi-Party Revenue Sharing:</strong> Distributing affiliate cuts and platform fees usually requires slow off-chain calculations and separate batch disbursements, leading to trust and reconciliation issues.</li>
+        <li><strong>Lack of Real-Time Verifiable Licensing:</strong> Buyers lack tamper-proof, on-chain cryptographic proof linking their software or model access key directly to a blockchain settlement transaction.</li>
       </ul>
 
       <h2>3. Core Technical Architecture (Atomic Transaction Pipeline)</h2>
-      <div class="ascii-box">[ Solana Transaction v1 & PayFi Pipeline (4,096-Byte Engine) ]
+      <div class="ascii-box">[ Solana PayFi Atomic Settlement Pipeline ]
 │
-├── 1. Security, Oracle & Pre-Execution Validation
-│   ├── Pyth Network High-Fidelity Price Oracles (Real-Time SOL/USD/IDR Feeds)
-│   ├── Jito Engine Private Bundle Routing (Sandwich Attack Prevention)
-│   ├── Anti-Wash Trading Cooldown Enforcement (Max 1 tx / 10s per wallet PDA)
-│   └── SNS Identity Resolver & Anti Self-Referral Validation (.sns & .sol)
+├── 1. Autonomous Agent Quota & Gas Management
+│   ├── Client & Agent Telemetry Monitor (Real-Time API Quota & Task Tracking)
+│   ├── Prepaid Gas Tank Engine (Autonomous Execution Circuit Breaker on Low SOL)
+│   └── 1-Click Gas Refill Portal (+1.000 Devnet SOL Instant Replenishment)
 │
-├── 2. PayFi Commerce & AMM DEX Execution
-│   ├── Direct QRIS Checkout (100% Instant Fiat Settlement to Merchant Account)
-│   ├── Merchant Prepaid Gas Tank Check & Execution Guardrail (Halt on 0 SOL)
-│   └── Multi-Vault Atomic Fee Relayer (sendRelayTransaction on Solana Devnet)
+├── 2. Atomic 3-Way Split Execution (SystemProgram Transfer Pipeline)
+│   ├── Vendor Settlement Payout   (90% ➔ 7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB)
+│   ├── Protocol Platform Treasury (5%  ➔ 9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS)
+│   └── Affiliate Referral Pool    (5%  ➔ FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh)
 │
-└── 3. Dual-Engine 4-Pool Fee Distribution Route (0.3% Swap & 5% PayFi Cut)
-    ├── 40% ➔ Yield Optimizer Vault (Auto-compounding APY)
-    ├── 30% ➔ $ZQI Real Yield Pool (USDC Staking Dividends)
-    ├── 15% ➔ Anti-Sybil Affiliate Treasury (Tiered Community Rewards)
-    └── 15% ➔ Protocol Operations & Relayer Treasury</div>
+└── 3. Cryptographic Verification & Digital Delivery
+    ├── Solana SPL Memo Program    (MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr)
+    ├── Unique Key Issuance Engine (AUTON-[SKU]-[HASH]-SOL Format)
+    ├── Digital Delivery Anchor    (Direct Google Drive / GitHub / API Endpoint Dispatch)
+    └── Realtime Registry Sync     (Supabase Live Postgres Inflow & Audit Ledger)</div>
 
       <h2>4. Protocol Specifications & On-Chain Verification</h2>
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width: 24%;">Component</th>
-            <th style="width: 48%;">Technical Implementation</th>
-            <th style="width: 28%;">Current On-Chain Status</th>
+            <th style="width: 25%;">Component</th>
+            <th style="width: 45%;">Technical Implementation</th>
+            <th style="width: 30%;">On-Chain Parameter / Status</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Transaction Standard</strong></td>
-            <td>Solana Transaction v1 (4,096-byte Atomic Payload) with Jito Bundles</td>
-            <td>Verified on Devnet</td>
+            <td><strong>Atomic Settlement Rail</strong></td>
+            <td>Simultaneous multi-transfer payload via native Solana System Program instructions</td>
+            <td>Deterministic 90:5:5 Split (Devnet Verified)</td>
           </tr>
           <tr>
             <td><strong>Smart Contract Program ID</strong></td>
+            <td>Custom AutonPay Protocol Settlement & Anchor Program ID</td>
             <td>
               <a href="https://solscan.io/account/HVHRr2JbMAT1zQ8N2vuWKctfV3ycvQYdDDzob1nqd6jD?cluster=devnet" target="_blank" class="mono">
-                HVHRr2JbMAT1zQ8N2vuWKctfV3ycvQYdDDzob1nqd6jD ↗
+                HVHRr2JbMAT1zQ8N2vu... ↗
               </a>
             </td>
-            <td>Executable (BPF Upgradeable)</td>
           </tr>
           <tr>
-            <td><strong>Price Oracle Feeds</strong></td>
-            <td>Pyth Network pull-based real-time market data (SOL/USD/IDR conversion)</td>
-            <td>Operational Feed Pipeline</td>
+            <td><strong>SPL Memo Program ID</strong></td>
+            <td>Solana Standard SPL Memo v2 for immutably recording license IDs on-chain</td>
+            <td>
+              <a href="https://solscan.io/account/MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr?cluster=devnet" target="_blank" class="mono">
+                MemoSq4gqABAXKb96qn... ↗
+              </a>
+            </td>
           </tr>
           <tr>
-            <td><strong>PayFi Settlement Rails</strong></td>
-            <td>Direct QRIS 100% fiat payout + Prepaid SOL Gas Tank debit (5%) with circuit breaker</td>
-            <td>Live Devnet Tested</td>
+            <td><strong>Admin Platform Wallet (5%)</strong></td>
+            <td>Designated protocol protocol fee treasury wallet address</td>
+            <td>
+              <a href="https://solscan.io/account/9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS?cluster=devnet" target="_blank" class="mono">
+                9bvD1899yYZCf2MKeud... ↗
+              </a>
+            </td>
           </tr>
           <tr>
-            <td><strong>Atomic 4-Pool Relayer</strong></td>
-            <td>Deterministic fee split (40:30:15:15) across Yield Vault, Staking, Affiliates, & Ops</td>
-            <td>Operational & Verified</td>
+            <td><strong>Affiliate Pool Wallet (5%)</strong></td>
+            <td>Fallback decentralized affiliate commission destination</td>
+            <td>
+              <a href="https://solscan.io/account/FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh?cluster=devnet" target="_blank" class="mono">
+                FU6cLtPS4eUBy92xa96... ↗
+              </a>
+            </td>
           </tr>
           <tr>
-            <td><strong>DEX Swap Engine</strong></td>
-            <td>Anti-MEV private bundle execution with 0.30% fee route to identical 4-pool split</td>
-            <td>Functional Devnet Core</td>
+            <td><strong>Primary Vendor Node (90%)</strong></td>
+            <td>Default registered vendor address for automated license issuance</td>
+            <td>
+              <a href="https://solscan.io/account/7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB?cluster=devnet" target="_blank" class="mono">
+                7LLjrqrfvg6qQKee8bX... ↗
+              </a>
+            </td>
           </tr>
           <tr>
-            <td><strong>Yield & Staking Engine</strong></td>
-            <td>Epoch-based Real Yield distribution funded by PayFi & DEX volume in pure USDC</td>
-            <td>Interactive Sandbox Demo</td>
+            <td><strong>Autonomous M2M Engine</strong></td>
+            <td>Autonomous task-driven daemon with Gas Tank tracking and auto-signing</td>
+            <td>Real-Time Background Loop Active</td>
           </tr>
           <tr>
-            <td><strong>Web3 Identity</strong></td>
-            <td>Solana Name Service (.sol & .sns) resolution with anti-sybil checks</td>
-            <td>Real-time RPC Lookup</td>
+            <td><strong>Digital Asset Delivery</strong></td>
+            <td>Immediate delivery of cloud storage (Google Drive, GitHub, APIs) via JSON export</td>
+            <td>Interactive Delivery Modal Active</td>
           </tr>
         </tbody>
       </table>
 
       <h2>5. Milestone Roadmap & Grant Utilization</h2>
       <ul>
-        <li><strong>Milestone 1 — PayFi Engine & 4-Pool Relayer (Current):</strong> Successfully tested Direct QRIS checkout, merchant Prepaid Gas Tank debit, hard guardrail execution circuit-breakers, and atomic 4-pool fee relayers on Devnet.</li>
-        <li><strong>Milestone 2 — Pyth Oracles, Anchor Routing & 1-Click Gas Refill:</strong> Integrate Pyth Network real-time price feeds for automated multi-currency conversions, deploy Anchor smart contracts to programmatically route fee splits directly into staking pools, and embed a 1-Click Swap widget inside merchant dashboards.</li>
-        <li><strong>Milestone 3 — Security Audits & Mainnet Deployment:</strong> Complete formal smart contract audits (OtterSec/Sec3), integrate Squads v4 multisig governance, seed protocol-owned liquidity (POL), and launch production PayFi rails for Southeast Asian merchants.</li>
+        <li><strong>Milestone 1 — Core PayFi Rail & Atomic 3-Way Split (Completed):</strong> Deployed and verified on-chain atomic 90/5/5 settlement on Solana Devnet. Implemented verified merchant role gating, instant Gas Tank refill, client receipt modals with `.json` exports, and automated Solscan transaction verification.</li>
+        <li><strong>Milestone 2 — Autonomous Agent SDK & Pyth Real-Time Pricing:</strong> Release `@autonpay/sdk` for Python and Node.js enabling AI agents to programmatically buy compute quotas. Integrate Pyth Network oracles for dynamic dynamic SOL/USD pricing and deploy Squads v4 multisig for admin treasury management.</li>
+        <li><strong>Milestone 3 — Security Audit & Mainnet Launch:</strong> Complete formal smart contract auditing (Sec3/OtterSec), launch compliance-verified vendor staking, and deploy production PayFi rails for global Web3 AI & developer marketplaces.</li>
       </ul>
 
       <div class="footer">
-        <span>© 2026 ZoniqFi Protocol • Confidential Grant Proposal</span>
-        <span>Live Platform: https://zoniqfi.com</span>
+        <span>© 2026 AutonPay Protocol • Confidential Grant Proposal</span>
+        <span>Network: Solana Devnet Cluster • Track: PayFi / AI Agents</span>
       </div>
     </div>
 

@@ -32,6 +32,14 @@ const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
 const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
 const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
 
+// Protocol Approved & Verified Merchant Whitelist
+const WHITELISTED_VENDORS = [
+  DEFAULT_ADMIN_WALLET, // Your Admin Wallet is also allowed
+  DEFAULT_VENDOR_WALLET, // Primary System Vendor
+  'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny', // Partner Vendor
+  // Paste your Account 2 / other vendor wallet address here
+];
+
 // Multi-Wallet Auto Detection Fallback
 const getSolanaProvider = () => {
   if (typeof window === 'undefined') return null;
@@ -74,6 +82,11 @@ useEffect(() => {
   const [walletAddress, setWalletAddress] = useState('');
   const [realSolBalance, setRealSolBalance] = useState(null);
   const [agentVaultBalance, setAgentVaultBalance] = useState(1.50);
+  const isAdmin = isWalletConnected && walletAddress === DEFAULT_ADMIN_WALLET;
+
+  // Strict Verification: Only whitelisted merchants can access Vendor Console
+  const isVendor = isWalletConnected && WHITELISTED_VENDORS.includes(walletAddress);
+
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [connectedProvider, setConnectedProvider] = useState(null);
 
@@ -468,6 +481,8 @@ const handleClearSales = async () => {
       {isMobile ? (
         <MobileView
           wallet={isWalletConnected ? walletAddress : ''}
+          isAdmin={isAdmin}
+          isVendor={isVendor}
           onConnectWallet={handleConnectWallet}
           solPriceUsd={145}
           isBotRunning={isAutonomous}
@@ -742,63 +757,86 @@ const handleClearSales = async () => {
             )}
 
             {activeTab === 'vendor' && (
-              !isWalletConnected ? (
-                <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                    🔒
-                  </div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-wider">Vendor Portal Restricted</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    Merchant Dashboard access requires Solana Devnet wallet authentication.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleConnectWallet}
-                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> Connect Wallet
-                  </button>
-                </div>
-              ) : (
-                <VendorPortal
-                  vendorWallet={walletAddress}
-                  products={products}
-                  onAddProduct={handleAddProduct}
-                  onUpdateProduct={handleUpdateProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                  sales={merchantSales}
-                />
-              )
-            )}
+  !isVendor ? (
+    <div className="bg-[#0b1222] border border-cyan-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+      <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+        🛡️
+      </div>
+      <h3 className="text-base font-bold text-white uppercase tracking-wider">
+        Verified Merchant Portal
+      </h3>
+      <p className="text-xs text-slate-400 leading-relaxed font-sans">
+        Asset publishing and merchant settlement management are strictly restricted to 
+        compliance-verified vendors to protect the decentralized ecosystem.
+        {isWalletConnected ? (
+          <span className="block mt-2 font-mono text-[11px] text-amber-400">
+            Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Buyer Account / Unregistered)
+          </span>
+        ) : (
+          <span className="block mt-2 text-slate-500">
+            Please connect an authorized vendor wallet to continue.
+          </span>
+        )}
+      </p>
+      <button
+        type="button"
+        onClick={handleConnectWallet}
+        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+      >
+        <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+      </button>
+    </div>
+  ) : (
+    <VendorPortal
+      vendorWallet={walletAddress}
+      products={products}
+      onAddProduct={handleAddProduct}
+      onUpdateProduct={handleUpdateProduct}
+      onDeleteProduct={handleDeleteProduct}
+      sales={merchantSales}
+    />
+  )
+)}
 
             {activeTab === 'admin' && (
-              !isWalletConnected ? (
-                <div className="bg-[#0b1222] border border-slate-800 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-purple-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                    🔒
-                  </div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-wider">Admin Console Restricted</h3>
-                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    The Protocol Admin Console requires an authenticated Web3 signature for audit validation.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleConnectWallet}
-                    className="w-full bg-gradient-to-r from-purple-700 to-indigo-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> Connect Admin Wallet
-                  </button>
-                </div>
-              ) : (
-                <AdminPortal 
-                  sales={merchantSales}
-                  onClearSales={handleClearSales}
-                  products={products}
-                  onDeleteProduct={handleDeleteProduct}
-                  onResetProducts={handleResetProducts}
-                />
-              )
-            )}
+  !isAdmin ? (
+    <div className="bg-[#0b1222] border border-red-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+      <div className="w-16 h-16 mx-auto bg-slate-900 border border-red-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+        ⛔
+      </div>
+      <h3 className="text-base font-bold text-red-400 uppercase tracking-wider">
+        Access Denied: Protocol Admin Only
+      </h3>
+      <p className="text-xs text-slate-400 leading-relaxed font-sans">
+        Admin Console is strictly locked to the designated protocol treasury wallet.
+        {isWalletConnected ? (
+          <span className="block mt-2 font-mono text-[11px] text-amber-400">
+            Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Unauthorized)
+          </span>
+        ) : (
+          <span className="block mt-2 text-slate-500">
+            Please connect the official admin wallet: {DEFAULT_ADMIN_WALLET.slice(0, 6)}...
+          </span>
+        )}
+      </p>
+      <button
+        type="button"
+        onClick={handleConnectWallet}
+        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+      >
+        <span>👛</span> {isWalletConnected ? 'Switch / Disconnect Wallet' : 'Connect Admin Wallet'}
+      </button>
+    </div>
+  ) : (
+    <AdminPortal 
+      sales={merchantSales}
+      onClearSales={handleClearSales}
+      products={products}
+      onDeleteProduct={handleDeleteProduct}
+      onResetProducts={handleResetProducts}
+    />
+  )
+)}
           </main>
         </>
       )}
