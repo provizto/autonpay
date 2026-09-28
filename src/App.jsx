@@ -6,7 +6,11 @@ import {
   SystemProgram, 
   LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
-import { initialProducts } from './data/products';
+import { 
+  getProductsFromDB, 
+  insertProductToDB, 
+  removeProductFromDB 
+} from './services/productService';
 import MobileView from './components/MobileView';
 import VendorPortal from './components/vendor/VendorPortal';
 import AdminPortal from './components/admin/AdminPortal';
@@ -46,7 +50,22 @@ export default function App() {
   }, []);
 
   const [activeTab, setActiveTab] = useState('marketplace'); 
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState([]);
+const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+
+useEffect(() => {
+  async function syncProducts() {
+    try {
+      const data = await getProductsFromDB();
+      setProducts(data);
+    } catch (err) {
+      addLog('ERR', 'Failed to fetch catalog from Supabase.');
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }
+  syncProducts();
+}, []);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -136,33 +155,78 @@ export default function App() {
     };
   }, []);
 
-  // CRUD Product Handlers
-  const handleAddProduct = (newProduct) => {
-    setProducts((prev) => [newProduct, ...prev]);
-    addLog('SYS', `New asset [${newProduct.sku}] published by vendor.`);
-  };
+  // Real CRUD Handlers (Supabase Integrated)
+const handleAddProduct = async (newProduct) => {
+  try {
+    const saved = await insertProductToDB(newProduct);
+    setProducts((prev) => [saved, ...prev]);
+    addLog('SYS', `New asset [${saved.sku}] permanently recorded on Supabase.`);
+  } catch (err) {
+    console.error('Failed to add product:', err);
+    alert('Failed to publish product to Supabase: ' + err.message);
+  }
+};
 
-  const handleUpdateProduct = (updatedProduct) => {
+const handleUpdateProduct = async (updatedProduct) => {
+  try {
+    const { error } = await supabase
+      .from('products')
+      .update({
+        sku: updatedProduct.sku,
+        title: updatedProduct.title,
+        category: updatedProduct.category,
+        price_sol: updatedProduct.priceSol,
+        instant_access_url: updatedProduct.instantAccessUrl,
+        description: updatedProduct.description
+      })
+      .eq('id', updatedProduct.id);
+
+    if (error) throw error;
+
     setProducts((prev) =>
       prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
     );
-    addLog('SYS', `Asset [${updatedProduct.sku}] updated successfully by vendor.`);
-  };
+    addLog('SYS', `Asset [${updatedProduct.sku}] updated on Supabase.`);
+  } catch (err) {
+    console.error('Failed to update product:', err);
+    alert('Failed to update product on Supabase: ' + err.message);
+  }
+};
 
-  const handleDeleteProduct = (productId) => {
+const handleDeleteProduct = async (productId) => {
+  try {
+    await removeProductFromDB(productId);
     setProducts((prev) => prev.filter((p) => p.id !== productId));
-    addLog('SYS', `Product ${productId} removed from catalog.`);
-  };
+    addLog('SYS', `Product ${productId} deleted permanently from Supabase.`);
+  } catch (err) {
+    console.error('Failed to delete product:', err);
+    alert('Failed to delete product from Supabase: ' + err.message);
+  }
+};
 
-  const handleResetProducts = () => {
-    setProducts(initialProducts);
-    addLog('SYS', 'Catalog restored to default specifications.');
-  };
+const handleResetProducts = async () => {
+  try {
+    // Re-fetch clean catalog from Supabase
+    const liveData = await getProductsFromDB();
+    setProducts(liveData);
+    addLog('SYS', 'Catalog re-synced from live Supabase records.');
+  } catch (err) {
+    console.error('Failed to re-sync catalog:', err);
+  }
+};
 
-  const handleClearSales = () => {
+const handleClearSales = async () => {
+  try {
+    const { error } = await supabase.from('settlements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) throw error;
     setMerchantSales([]);
-    addLog('SYS', 'Settlement ledger history cleared.');
-  };
+    addLog('SYS', 'Settlement ledger purged from Supabase.');
+  } catch (err) {
+    console.error('Failed to clear sales:', err);
+    setMerchantSales([]);
+    addLog('SYS', 'Local settlement ledger cleared.');
+  }
+};
 
   // Trigger Pop-up Modal Multi-Wallet
   const handleConnectWallet = async () => {
