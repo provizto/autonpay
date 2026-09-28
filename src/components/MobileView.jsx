@@ -96,18 +96,36 @@ export default function MobileView({
           <div className="flex items-center justify-between gap-2">
             <AutonPayLogo size={32} withText={true} />
 
-            <button
-              type="button"
-              onClick={onConnectWallet}
-              className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 ${
-                walletAddress
-                  ? 'bg-[#0d1629] border-emerald-700/70 text-emerald-300'
-                  : 'bg-blue-600 hover:bg-blue-500 border-blue-500 text-white'
-              }`}
-            >
-              <span>{walletAddress ? '🟢' : '👛'}</span>
-              <span>{walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Connect Wallet'}</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              {/* Tombol Earn 5% di HP (muncul jika wallet connect) */}
+              {walletAddress && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const shareUrl = `${window.location.origin}?ref=${walletAddress}`;
+                    navigator.clipboard.writeText(shareUrl);
+                    alert(`Referral Link copied!\n\n${shareUrl}\n\nShare this link to automatically receive an instant 5% SOL sent directly to your wallet whenever someone buys!`);
+                  }}
+                  className="bg-purple-950/80 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow shrink-0 active:scale-95"
+                  title="Salin Link Referral"
+                >
+                  <span>🔗</span> <span>5%</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onConnectWallet}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 ${
+                  walletAddress
+                    ? 'bg-[#0d1629] border-emerald-700/70 text-emerald-300'
+                    : 'bg-blue-600 hover:bg-blue-500 border-blue-500 text-white'
+                }`}
+              >
+                <span>{walletAddress ? '🟢' : '👛'}</span>
+                <span>{walletAddress ? `${walletAddress.slice(0, 4)}...${walletAddress.slice(-4)}` : 'Connect'}</span>
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between gap-2">
