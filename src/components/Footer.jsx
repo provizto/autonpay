@@ -63,7 +63,7 @@ export default function Footer() {
           </a>
 
           <a
-            href="/autonpay_roadmap_defense.html"
+            href="/autonpay_capital_defense.html"
             target="_blank"
             rel="noopener noreferrer"
             className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
