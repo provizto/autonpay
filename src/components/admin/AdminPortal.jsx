@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { ADMIN_WALLET_ADDRESS, DEFAULT_AFFILIATE_ADDRESS, DEVNET_RPC_URL } from '../../config/solanaConfig';
 
+// Default Protocol Wallets
+const PROTOCOL_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
+const PROTOCOL_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
+const PROTOCOL_DEVNET_RPC = 'https://api.devnet.solana.com';
+
 export default function AdminPortal({ 
   sales = [], 
   onClearSales, 
@@ -9,10 +14,10 @@ export default function AdminPortal({
   onResetProducts 
 }) {
   const [adminTreasury, setAdminTreasury] = useState(
-    ADMIN_WALLET_ADDRESS ? ADMIN_WALLET_ADDRESS.toString() : 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny'
+    ADMIN_WALLET_ADDRESS ? ADMIN_WALLET_ADDRESS.toString() : PROTOCOL_ADMIN_WALLET
   );
   const [affiliateTreasury, setAffiliateTreasury] = useState(
-    DEFAULT_AFFILIATE_ADDRESS ? DEFAULT_AFFILIATE_ADDRESS.toString() : 'H8XSVM7UDZbk5eFhzWMLU5WPKZwNLBo85wGbrfPDX6Gw'
+    DEFAULT_AFFILIATE_ADDRESS ? DEFAULT_AFFILIATE_ADDRESS.toString() : PROTOCOL_AFFILIATE_WALLET
   );
   const [isSaved, setIsSaved] = useState(false);
 
@@ -28,16 +33,16 @@ export default function AdminPortal({
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  // Fitur Export CSV Riwayat Transaksi untuk Juri / Audit
+  // Fitur Export CSV Riwayat Transaksi untuk Audit
   const handleExportCSV = () => {
     if (sales.length === 0) {
       alert('Tidak ada data transaksi untuk diekspor.');
       return;
     }
 
-    const headers = ['ID,Time,SKU,Agent,GrossSOL,VendorCutSOL,AdminFeeSOL,AffiliateFeeSOL,Status\n'];
+    const headers = ['ID,Time,SKU,Agent,GrossSOL,VendorCutSOL,AdminFeeSOL,AffiliateFeeSOL,Status,Signature\n'];
     const rows = sales.map(s => 
-      `${s.id},${s.time},${s.sku},${s.agent || 'Buyer'},${s.grossSol},${s.netVendorSol || (s.grossSol * 0.9)},${s.adminFeeSol || (s.grossSol * 0.05)},${s.affiliateFeeSol || (s.grossSol * 0.05)},${s.status || 'Settled'}`
+      `${s.id},${s.time},${s.sku},${s.agent || 'Buyer'},${s.grossSol},${s.netVendorSol || (s.grossSol * 0.9)},${s.adminFeeSol || (s.grossSol * 0.05)},${s.affiliateFeeSol || (s.grossSol * 0.05)},${s.status || 'Settled'},${s.signature || s.txSignature || 'N/A'}`
     );
 
     const blob = new Blob([headers.concat(rows.join('\n'))], { type: 'text/csv;charset=utf-8;' });
@@ -78,7 +83,7 @@ export default function AdminPortal({
             <span>📥</span> Export CSV
           </button>
 
-          {/* Tombol Bersihkan Ledger Riwayat Testing */}
+          {/* Tombol Bersihkan Ledger */}
           <button
             type="button"
             onClick={() => {
@@ -116,7 +121,7 @@ export default function AdminPortal({
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[10px] text-slate-400 uppercase block">Total Settlements</span>
           <span className="text-xl font-bold text-white mt-1 block">{sales.length} TXs</span>
-          <span className="text-[10px] text-emerald-500/80">100% On-Chain Success</span>
+          <span className="text-[10px] text-emerald-500/80">Devnet Settlement Registry</span>
         </div>
       </div>
 
@@ -125,7 +130,6 @@ export default function AdminPortal({
         {/* Kolom Kiri: Konfigurasi Wallet & Reset Produk */}
         <div className="space-y-4 font-mono text-xs">
           
-          {/* Konfigurasi Wallet */}
           <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg">
             <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
               <span className="text-purple-400 font-bold">⚙️</span>
@@ -162,7 +166,7 @@ export default function AdminPortal({
               <div>
                 <label className="text-[10px] text-slate-400 block mb-1">SOLANA RPC CONNECTION</label>
                 <div className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-400 text-[11px] truncate">
-                  {DEVNET_RPC_URL}
+                  {DEVNET_RPC_URL || PROTOCOL_DEVNET_RPC}
                 </div>
               </div>
 
@@ -175,11 +179,10 @@ export default function AdminPortal({
             </form>
           </div>
 
-          {/* Tombol Darurat Reset Produk ke Data Awal */}
           <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl space-y-2">
             <span className="text-[10px] text-slate-400 uppercase font-bold block">Marketplace Maintenance</span>
             <p className="text-[11px] text-slate-500 font-sans leading-relaxed">
-              Jika katalog kotor setelah pengujian dummy, tekan tombol di bawah untuk mengembalikan produk ke daftar standar bawaan.
+              Kembalikan katalog produk demo ke daftar default awal jika pengujian selesai.
             </p>
             <button
               type="button"
@@ -196,7 +199,7 @@ export default function AdminPortal({
 
         </div>
 
-        {/* Global Protocol Ledger Monitor */}
+        {/* Kolom Kanan: Global Protocol Ledger Monitor */}
         <div className="lg:col-span-2 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-lg font-mono">
           <div className="flex justify-between items-center text-xs">
             <h3 className="font-bold text-white flex items-center gap-2">
@@ -226,30 +229,47 @@ export default function AdminPortal({
                     </td>
                   </tr>
                 ) : (
-                  sales.map((sale) => (
-                    <tr key={sale.id} className="hover:bg-slate-800/30">
-                      <td className="py-2.5 text-slate-400">{sale.time}</td>
-                      <td className="py-2.5 text-cyan-300 font-bold">{sale.sku}</td>
-                      <td className="py-2.5 text-white">{sale.grossSol} SOL</td>
-                      <td className="py-2.5 text-emerald-400 font-bold">+{(sale.netVendorSol || sale.grossSol * 0.9).toFixed(4)} SOL</td>
-                      <td className="py-2.5 text-cyan-400">+{(sale.adminFeeSol || sale.grossSol * 0.05).toFixed(4)} SOL</td>
-                      <td className="py-2.5 text-purple-400">+{(sale.affiliateFeeSol || sale.grossSol * 0.05).toFixed(4)} SOL</td>
-                      <td className="py-2.5">
-                        <a
-                          href={
-                            sale.signature || sale.txSignature
-                              ? `https://solscan.io/tx/${sale.signature || sale.txSignature}?cluster=devnet`
-                              : 'https://solscan.io/?cluster=devnet'
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-cyan-400 underline text-[10px] hover:text-cyan-300"
-                        >
-                          Solscan ↗
-                        </a>
-                      </td>
-                    </tr>
-                  ))
+                  sales.map((sale) => {
+                    const sig = sale.signature || sale.txSignature || '';
+                    const isRealOnChain = sig.length > 40 && !sig.endsWith('dev');
+
+                    return (
+                      <tr key={sale.id} className="hover:bg-slate-800/30">
+                        <td className="py-2.5 text-slate-400">{sale.time}</td>
+                        <td className="py-2.5 text-cyan-300 font-bold">{sale.sku}</td>
+                        <td className="py-2.5 text-white">{sale.grossSol} SOL</td>
+                        <td className="py-2.5 text-emerald-400 font-bold">
+                          +{(sale.netVendorSol || sale.grossSol * 0.9).toFixed(4)} SOL
+                        </td>
+                        <td className="py-2.5 text-cyan-400">
+                          +{(sale.adminFeeSol || sale.grossSol * 0.05).toFixed(4)} SOL
+                        </td>
+                        <td className="py-2.5 text-purple-400">
+                          +{(sale.affiliateFeeSol || sale.grossSol * 0.05).toFixed(4)} SOL
+                        </td>
+                        <td className="py-2.5">
+                          {isRealOnChain ? (
+                            <a
+                              href={`https://solscan.io/tx/${sig}?cluster=devnet`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-cyan-400 underline text-[10px] hover:text-cyan-300 font-bold"
+                              title={sig}
+                            >
+                              Solscan ↗
+                            </a>
+                          ) : (
+                            <span 
+                              className="text-slate-500 text-[10px] bg-slate-950 px-2 py-0.5 rounded border border-slate-800 select-none"
+                              title="Simulated agent transaction (Local Gas Tank)"
+                            >
+                              🤖 Simulated
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

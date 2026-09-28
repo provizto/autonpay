@@ -310,23 +310,26 @@ export default function App() {
       };
       setMerchantSales((prev) => [newSaleItem, ...prev]);
 
-      try {
-        await insertSettlementRecord({
-          tx_signature: txSig,
-          sku: product.sku,
-          buyer_wallet: walletAddress || 'Simulated_Agent_Daemon',
-          vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
-          admin_wallet: DEFAULT_ADMIN_WALLET,
-          affiliate_wallet: DEFAULT_AFFILIATE_WALLET,
-          gross_sol: gross,
-          vendor_sol: netVendor,
-          admin_sol: adminFee,
-          affiliate_sol: affiliateCut,
-          license_key: generatedKey,
-          status: 'Settled'
-        });
-      } catch (dbErr) {
-        console.warn('DB recording skipped:', dbErr);
+      // Simpan catatan ke database Supabase HANYA jika transaksi asli on-chain
+      if (isRealOnChain && !txSig.endsWith('dev')) {
+        try {
+          await insertSettlementRecord({
+            tx_signature: txSig,
+            sku: product.sku,
+            buyer_wallet: walletAddress || 'Buyer',
+            vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
+            admin_wallet: DEFAULT_ADMIN_WALLET,
+            affiliate_wallet: DEFAULT_AFFILIATE_WALLET,
+            gross_sol: gross,
+            vendor_sol: netVendor,
+            admin_sol: adminFee,
+            affiliate_sol: affiliateCut,
+            license_key: generatedKey,
+            status: 'Settled'
+          });
+        } catch (dbErr) {
+          console.warn('DB recording skipped:', dbErr);
+        }
       }
 
       if (!isAgentAuto) {
