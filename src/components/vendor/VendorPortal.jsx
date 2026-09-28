@@ -52,7 +52,7 @@ export default function VendorPortal({
 
       if (onAddProduct) onAddProduct(newProd);
 
-      setSuccessMsg(`Produk ${newProd.sku} berhasil terdaftar di marketplace!`);
+      setSuccessMsg(`Product ${newProd.sku} is listed successfully on marketplace!`);
       setFormData({
         sku: '',
         title: '',
@@ -79,7 +79,7 @@ export default function VendorPortal({
       });
     }
 
-    setSuccessMsg(`Produk ${editingProduct.sku} berhasil diperbarui!`);
+    setSuccessMsg(`Product ${editingProduct.sku} is updated successfully!`);
     setEditingProduct(null);
     setTimeout(() => setSuccessMsg(null), 4000);
   };
