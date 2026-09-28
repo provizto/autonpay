@@ -635,10 +635,10 @@ const handleClearSales = async () => {
                     onClick={() => {
                       const shareUrl = `${window.location.origin}?ref=${walletAddress}`;
                       navigator.clipboard.writeText(shareUrl);
-                      alert(`Referral Link copied!\n\n${shareUrl}\n\nBagikan link ini. Anda otomatis mendapatkan 5% SOL instan ke wallet Anda setiap ada yang membeli!`);
+                      alert(`Referral Link copied!\n\n${shareUrl}\n\nShare this link and earn an instant 5% SOL payout on every sale!`);
                     }}
                     className="bg-purple-950/70 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-mono font-bold px-3 py-2 rounded-xl transition flex items-center gap-1 shadow"
-                    title="Salin Link Referral Anda"
+                    title="Copy Your Referral Link"
                   >
                     <span>🔗</span> <span>Earn 5%</span>
                   </button>
