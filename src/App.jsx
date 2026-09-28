@@ -34,10 +34,9 @@ const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
 
 // Protocol Approved & Verified Merchant Whitelist
 const WHITELISTED_VENDORS = [
-  DEFAULT_ADMIN_WALLET, // Your Admin Wallet is also allowed
-  DEFAULT_VENDOR_WALLET, // Primary System Vendor
-  'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny', // Partner Vendor
-  // Paste your Account 2 / other vendor wallet address here
+  DEFAULT_ADMIN_WALLET,
+  DEFAULT_VENDOR_WALLET,
+  'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny'
 ];
 
 // Multi-Wallet Auto Detection Fallback
@@ -59,21 +58,22 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState('marketplace'); 
   const [products, setProducts] = useState([]);
-const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
-useEffect(() => {
-  async function syncProducts() {
-    try {
-      const data = await getProductsFromDB();
-      setProducts(data);
-    } catch (err) {
-      addLog('ERR', 'Failed to fetch catalog from Supabase.');
-    } finally {
-      setIsLoadingProducts(false);
+  useEffect(() => {
+    async function syncProducts() {
+      try {
+        const data = await getProductsFromDB();
+        setProducts(data || []);
+      } catch (err) {
+        addLog('ERR', 'Failed to fetch catalog from Supabase.');
+      } finally {
+        setIsLoadingProducts(false);
+      }
     }
-  }
-  syncProducts();
-}, []);
+    syncProducts();
+  }, []);
+
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -91,7 +91,7 @@ useEffect(() => {
       const refParam = params.get('ref');
       if (refParam) {
         try {
-          new PublicKey(refParam); // Validasi apakah format public key Solana sah
+          new PublicKey(refParam);
           return refParam;
         } catch (e) {
           console.warn('Invalid referral wallet in URL, fallback to default.');
@@ -101,8 +101,25 @@ useEffect(() => {
     return DEFAULT_AFFILIATE_WALLET;
   });
 
-  // Strict Verification: Only whitelisted merchants can access Vendor Console
-  const isVendor = isWalletConnected && WHITELISTED_VENDORS.includes(walletAddress);
+  // Whitelist Vendor Terpercaya (Tersimpan otomatis di browser)
+  const [whitelistedVendors, setWhitelistedVendors] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('autonpay_vendors') : null;
+    return saved ? JSON.parse(saved) : [
+      '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB',
+      '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'
+    ];
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('autonpay_vendors', JSON.stringify(whitelistedVendors));
+    }
+  }, [whitelistedVendors]);
+
+  // Strict Verification: Merchants in whitelist can access Vendor Console
+  const isVendor = isWalletConnected && (
+    whitelistedVendors.includes(walletAddress) || WHITELISTED_VENDORS.includes(walletAddress)
+  );
 
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [connectedProvider, setConnectedProvider] = useState(null);
@@ -126,19 +143,6 @@ useEffect(() => {
 
   // Sales Ledger
   const [merchantSales, setMerchantSales] = useState([]);
-
-  // Whitelist Vendor Terpercaya (Tersimpan otomatis di browser)
-  const [whitelistedVendors, setWhitelistedVendors] = useState(() => {
-    const saved = localStorage.getItem('autonpay_vendors');
-    return saved ? JSON.parse(saved) : [
-      '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB', // Vendor Default
-      '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'  // Admin Wallet
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('autonpay_vendors', JSON.stringify(whitelistedVendors));
-  }, [whitelistedVendors]);
 
   const handleAddVendor = (newWallet) => {
     const cleanWallet = newWallet.trim();
@@ -214,80 +218,79 @@ useEffect(() => {
     };
   }, []);
 
-  // Real CRUD Handlers (Supabase Integrated)
-const handleAddProduct = async (newProduct) => {
-  try {
-    const saved = await insertProductToDB(newProduct);
-    setProducts((prev) => [saved, ...prev]);
-    addLog('SYS', `New asset [${saved.sku}] permanently recorded on Supabase.`);
-  } catch (err) {
-    console.error('Failed to add product:', err);
-    alert('Failed to publish product to Supabase: ' + err.message);
-  }
-};
+  // CRUD Handlers
+  const handleAddProduct = async (newProduct) => {
+    try {
+      const saved = await insertProductToDB(newProduct);
+      setProducts((prev) => [saved, ...prev]);
+      addLog('SYS', `New asset [${saved.sku}] permanently recorded on Supabase.`);
+    } catch (err) {
+      console.error('Failed to add product:', err);
+      alert('Failed to publish product to Supabase: ' + err.message);
+    }
+  };
 
-const handleUpdateProduct = async (updatedProduct) => {
-  try {
-    const { error } = await supabase
-      .from('products')
-      .update({
-        sku: updatedProduct.sku,
-        title: updatedProduct.title,
-        category: updatedProduct.category,
-        price_sol: updatedProduct.priceSol,
-        instant_access_url: updatedProduct.instantAccessUrl,
-        description: updatedProduct.description
-      })
-      .eq('id', updatedProduct.id);
+  const handleUpdateProduct = async (updatedProduct) => {
+    try {
+      if (typeof supabase !== 'undefined') {
+        await supabase
+          .from('products')
+          .update({
+            sku: updatedProduct.sku,
+            title: updatedProduct.title,
+            category: updatedProduct.category,
+            price_sol: updatedProduct.priceSol,
+            instant_access_url: updatedProduct.instantAccessUrl,
+            description: updatedProduct.description
+          })
+          .eq('id', updatedProduct.id);
+      }
+      setProducts((prev) =>
+        prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
+      addLog('SYS', `Asset [${updatedProduct.sku}] updated.`);
+    } catch (err) {
+      console.error('Failed to update product:', err);
+      alert('Failed to update product: ' + err.message);
+    }
+  };
 
-    if (error) throw error;
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await removeProductFromDB(productId);
+      setProducts((prev) => prev.filter((p) => p.id !== productId));
+      addLog('SYS', `Product ${productId} deleted permanently.`);
+    } catch (err) {
+      console.error('Failed to delete product:', err);
+      alert('Failed to delete product from Supabase: ' + err.message);
+    }
+  };
 
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-    addLog('SYS', `Asset [${updatedProduct.sku}] updated on Supabase.`);
-  } catch (err) {
-    console.error('Failed to update product:', err);
-    alert('Failed to update product on Supabase: ' + err.message);
-  }
-};
+  const handleResetProducts = async () => {
+    try {
+      const liveData = await getProductsFromDB();
+      setProducts(liveData || []);
+      addLog('SYS', 'Catalog re-synced from live Supabase records.');
+    } catch (err) {
+      console.error('Failed to re-sync catalog:', err);
+    }
+  };
 
-const handleDeleteProduct = async (productId) => {
-  try {
-    await removeProductFromDB(productId);
-    setProducts((prev) => prev.filter((p) => p.id !== productId));
-    addLog('SYS', `Product ${productId} deleted permanently from Supabase.`);
-  } catch (err) {
-    console.error('Failed to delete product:', err);
-    alert('Failed to delete product from Supabase: ' + err.message);
-  }
-};
+  const handleClearSales = async () => {
+    try {
+      if (typeof supabase !== 'undefined') {
+        await supabase.from('settlements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      setMerchantSales([]);
+      addLog('SYS', 'Settlement ledger cleared.');
+    } catch (err) {
+      console.error('Failed to clear sales:', err);
+      setMerchantSales([]);
+      addLog('SYS', 'Local settlement ledger cleared.');
+    }
+  };
 
-const handleResetProducts = async () => {
-  try {
-    // Re-fetch clean catalog from Supabase
-    const liveData = await getProductsFromDB();
-    setProducts(liveData);
-    addLog('SYS', 'Catalog re-synced from live Supabase records.');
-  } catch (err) {
-    console.error('Failed to re-sync catalog:', err);
-  }
-};
-
-const handleClearSales = async () => {
-  try {
-    const { error } = await supabase.from('settlements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (error) throw error;
-    setMerchantSales([]);
-    addLog('SYS', 'Settlement ledger purged from Supabase.');
-  } catch (err) {
-    console.error('Failed to clear sales:', err);
-    setMerchantSales([]);
-    addLog('SYS', 'Local settlement ledger cleared.');
-  }
-};
-
-  // Trigger Pop-up Modal Multi-Wallet
+  // Connect Wallet Handler
   const handleConnectWallet = async () => {
     if (isWalletConnected) {
       const provider = connectedProvider || getSolanaProvider();
@@ -305,7 +308,7 @@ const handleClearSales = async () => {
     setShowWalletModal(true);
   };
 
-  // Eksekusi Connect ke Wallet Spesifik
+  // Connect Provider
   const connectToWallet = async (walletType) => {
     setShowWalletModal(false);
     try {
@@ -326,7 +329,7 @@ const handleClearSales = async () => {
       } else if (walletType === 'backpack') {
         provider = window.backpack;
       } else {
-        provider = window.solana; // MetaMask Solana Snap atau Browser In-App
+        provider = window.solana;
       }
 
       if (!provider) {
@@ -359,6 +362,13 @@ const handleClearSales = async () => {
   const executeBuy = async (product, isAgentAuto = false) => {
     const provider = connectedProvider || getSolanaProvider();
     const hasWallet = provider && provider.publicKey;
+
+    // 🔒 PENCEGAH UTAMA: Jika pembeli manual belum konek wallet, wajibkan connect dulu!
+    if (!isAgentAuto && (!isWalletConnected || !hasWallet)) {
+      alert('Please connect your Solana wallet (Phantom / Solflare) first to make a purchase!');
+      setShowWalletModal(true);
+      return;
+    }
 
     const gross = product.priceSol;
     const netVendor = parseFloat((gross * 0.90).toFixed(4));
@@ -402,10 +412,10 @@ const handleClearSales = async () => {
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
         addLog('NET', `Confirmed on Solana Devnet! Hash: ${txSig}`);
       } else {
+        // Alur Autonomous Agent Daemon (Simulasi Gas Tank)
         if (agentVaultBalance < gross) {
           addLog('ERR', `Settlement aborted: Insufficient Agent Gas Tank for ${product.sku}. Click (+Refill) in the header.`);
           setActivePurchase(null);
-          if (!isAgentAuto) alert('Agent Gas Tank depleted! Please click (+Refill) at the top right.');
           return;
         }
         txSig = '5wKz' + Math.random().toString(36).substring(2, 8) + 'dev';
@@ -433,7 +443,7 @@ const handleClearSales = async () => {
       };
       setMerchantSales((prev) => [newSaleItem, ...prev]);
 
-      // Simpan catatan ke database Supabase HANYA jika transaksi asli on-chain
+      // Catat ke Supabase hanya transaksi asli on-chain
       if (isRealOnChain && !txSig.endsWith('dev')) {
         try {
           await insertSettlementRecord({
@@ -442,7 +452,7 @@ const handleClearSales = async () => {
             buyer_wallet: walletAddress || 'Buyer',
             vendor_wallet: product.vendorWallet || DEFAULT_VENDOR_WALLET,
             admin_wallet: DEFAULT_ADMIN_WALLET,
-            affiliate_wallet: DEFAULT_AFFILIATE_WALLET,
+            affiliate_wallet: referrerWallet || DEFAULT_AFFILIATE_WALLET,
             gross_sol: gross,
             vendor_sol: netVendor,
             admin_sol: adminFee,
@@ -455,6 +465,7 @@ const handleClearSales = async () => {
         }
       }
 
+      // Kuitansi hanya untuk pembeli manusia
       if (!isAgentAuto) {
         setLicenseModal({
           product,
@@ -491,7 +502,7 @@ const handleClearSales = async () => {
       addLog('SYS', 'Autonomous Agent paused.');
     }
     return () => clearInterval(interval);
-  }, [isAutonomous, products, agentVaultBalance]);
+  }, [isAutonomous, products]);
 
   // Real Database License Verifier
   const handleVerify = async (e) => {
@@ -629,6 +640,7 @@ const handleClearSales = async () => {
                       : 'Connect Wallet'}
                   </span>
                 </button>
+
                 {isWalletConnected && (
                   <button
                     type="button"
@@ -817,95 +829,95 @@ const handleClearSales = async () => {
             )}
 
             {activeTab === 'vendor' && (
-  !isVendor ? (
-    <div className="bg-[#0b1222] border border-cyan-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-      <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-        🛡️
-      </div>
-      <h3 className="text-base font-bold text-white uppercase tracking-wider">
-        Verified Merchant Portal
-      </h3>
-      <p className="text-xs text-slate-400 leading-relaxed font-sans">
-        Asset publishing and merchant settlement management are strictly restricted to 
-        compliance-verified vendors to protect the decentralized ecosystem.
-        {isWalletConnected ? (
-          <span className="block mt-2 font-mono text-[11px] text-amber-400">
-            Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Buyer Account / Unregistered)
-          </span>
-        ) : (
-          <span className="block mt-2 text-slate-500">
-            Please connect an authorized vendor wallet to continue.
-          </span>
-        )}
-      </p>
-      <button
-        type="button"
-        onClick={handleConnectWallet}
-        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-      >
-        <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
-      </button>
-    </div>
-  ) : (
-    <VendorPortal
-      vendorWallet={walletAddress}
-      products={products}
-      onAddProduct={handleAddProduct}
-      onUpdateProduct={handleUpdateProduct}
-      onDeleteProduct={handleDeleteProduct}
-      sales={merchantSales}
-    />
-  )
-)}
+              !isVendor ? (
+                <div className="bg-[#0b1222] border border-cyan-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                    🛡️
+                  </div>
+                  <h3 className="text-base font-bold text-white uppercase tracking-wider">
+                    Verified Merchant Portal
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Asset publishing and merchant settlement management are strictly restricted to 
+                    compliance-verified vendors to protect the decentralized ecosystem.
+                    {isWalletConnected ? (
+                      <span className="block mt-2 font-mono text-[11px] text-amber-400">
+                        Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Buyer Account / Unregistered)
+                      </span>
+                    ) : (
+                      <span className="block mt-2 text-slate-500">
+                        Please connect an authorized vendor wallet to continue.
+                      </span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConnectWallet}
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+                  </button>
+                </div>
+              ) : (
+                <VendorPortal
+                  vendorWallet={walletAddress}
+                  products={products}
+                  onAddProduct={handleAddProduct}
+                  onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={handleDeleteProduct}
+                  sales={merchantSales}
+                />
+              )
+            )}
 
             {activeTab === 'admin' && (
-  !isAdmin ? (
-    <div className="bg-[#0b1222] border border-red-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-      <div className="w-16 h-16 mx-auto bg-slate-900 border border-red-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-        ⛔
-      </div>
-      <h3 className="text-base font-bold text-red-400 uppercase tracking-wider">
-        Access Denied: Protocol Admin Only
-      </h3>
-      <p className="text-xs text-slate-400 leading-relaxed font-sans">
-        Admin Console is strictly locked to the designated protocol treasury wallet.
-        {isWalletConnected ? (
-          <span className="block mt-2 font-mono text-[11px] text-amber-400">
-            Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Unauthorized)
-          </span>
-        ) : (
-          <span className="block mt-2 text-slate-500">
-            Please connect the official admin wallet: {DEFAULT_ADMIN_WALLET.slice(0, 6)}...
-          </span>
-        )}
-      </p>
-      <button
-        type="button"
-        onClick={handleConnectWallet}
-        className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-      >
-        <span>👛</span> {isWalletConnected ? 'Switch / Disconnect Wallet' : 'Connect Admin Wallet'}
-      </button>
-    </div>
-  ) : (
-    <AdminPortal 
-      sales={merchantSales}
-      onClearSales={handleClearSales}
-      products={products}
-      onDeleteProduct={handleDeleteProduct}
-      onResetProducts={handleResetProducts}
-      currentWallet={walletAddress}
-      whitelistedVendors={whitelistedVendors}
-      onAddVendor={handleAddVendor}
-      onRemoveVendor={handleRemoveVendor}
-    />
-  )
-)}
+              !isAdmin ? (
+                <div className="bg-[#0b1222] border border-red-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-red-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                    ⛔
+                  </div>
+                  <h3 className="text-base font-bold text-red-400 uppercase tracking-wider">
+                    Access Denied: Protocol Admin Only
+                  </h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    Admin Console is strictly locked to the designated protocol treasury wallet.
+                    {isWalletConnected ? (
+                      <span className="block mt-2 font-mono text-[11px] text-amber-400">
+                        Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Unauthorized)
+                      </span>
+                    ) : (
+                      <span className="block mt-2 text-slate-500">
+                        Please connect the official admin wallet: {DEFAULT_ADMIN_WALLET.slice(0, 6)}...
+                      </span>
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleConnectWallet}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <span>👛</span> {isWalletConnected ? 'Switch / Disconnect Wallet' : 'Connect Admin Wallet'}
+                  </button>
+                </div>
+              ) : (
+                <AdminPortal 
+                  sales={merchantSales}
+                  onClearSales={handleClearSales}
+                  products={products}
+                  onDeleteProduct={handleDeleteProduct}
+                  onResetProducts={handleResetProducts}
+                  currentWallet={walletAddress}
+                  whitelistedVendors={whitelistedVendors}
+                  onAddVendor={handleAddVendor}
+                  onRemoveVendor={handleRemoveVendor}
+                />
+              )
+            )}
           </main>
         </>
       )}
 
-      {/* 3. SETTLEMENT RECEIPT MODAL */}
+      {/* SETTLEMENT RECEIPT MODAL */}
       {licenseModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-cyan-500/50 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
@@ -1069,7 +1081,7 @@ JSON.stringify({
         </div>
       )}
 
-      {/* 4. REAL DATABASE LICENSE VERIFIER MODAL */}
+      {/* REAL DATABASE LICENSE VERIFIER MODAL */}
       {isVerifyOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1120] border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
@@ -1145,7 +1157,7 @@ JSON.stringify({
         </div>
       )}
 
-      {/* 5. MODAL MULTI-WALLET (PHANTOM, SOLFLARE, BACKPACK, METAMASK) */}
+      {/* MULTI-WALLET MODAL */}
       {showWalletModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-[#0b1222] border border-slate-800 rounded-2xl max-w-xs w-full p-4 space-y-3 font-mono">
@@ -1201,7 +1213,7 @@ JSON.stringify({
         </div>
       )}
 
-      {/* FOOTER DESKTOP & GLOBAL */}
+      {/* FOOTER */}
       {!isMobile && <Footer />}
 
     </div>

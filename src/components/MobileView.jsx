@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
 import AutonPayLogo from './AutonPayLogo';
@@ -17,7 +17,7 @@ export default function MobileView({
   botLogs: externalBotLogs,
   setBotLogs: externalSetBotLogs,
   logs: externalLogs,
-  activePurchase, // Status loading tombol buy
+  activePurchase,
   products = [],
   onAddProduct,
   onUpdateProduct,
@@ -25,7 +25,7 @@ export default function MobileView({
   onResetProducts,
   merchantSales = [],
   onClearSales,
-  onBuyProduct, // Pemicu transaksi Solana Devnet
+  onBuyProduct,
 }) {
   const [currentTab, setCurrentTab] = useState('MARKET');
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,21 +92,20 @@ export default function MobileView({
       <div className="w-full max-w-md min-h-screen px-3 pt-3 pb-20 flex flex-col justify-start box-border">
         
         {/* HEADER */}
-        <div className="w-full mb-3 space-y-2.5">
+        <div className="w-full mb-3 space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <AutonPayLogo size={32} withText={true} />
+            <AutonPayLogo size={28} withText={true} />
 
             <div className="flex items-center gap-1.5">
-              {/* Tombol Earn 5% di HP (muncul jika wallet connect) */}
               {walletAddress && (
                 <button
                   type="button"
                   onClick={() => {
                     const shareUrl = `${window.location.origin}?ref=${walletAddress}`;
                     navigator.clipboard.writeText(shareUrl);
-                    alert(`Referral Link copied!\n\n${shareUrl}\n\nShare this link to automatically receive an instant 5% SOL sent directly to your wallet whenever someone buys!`);
+                    alert(`Referral Link copied!\n\n${shareUrl}\n\nShare this link to automatically receive an instant 5% SOL!`);
                   }}
-                  className="bg-purple-950/80 hover:bg-purple-900 border border-purple-800 text-purple-300 text-xs font-mono font-bold px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 shadow shrink-0 active:scale-95"
+                  className="bg-purple-950/80 hover:bg-purple-900 border border-purple-800 text-purple-300 text-[11px] font-mono font-bold px-2 py-1.5 rounded-lg transition flex items-center gap-1 shadow shrink-0 active:scale-95"
                   title="Salin Link Referral"
                 >
                   <span>🔗</span> <span>5%</span>
@@ -116,7 +115,7 @@ export default function MobileView({
               <button
                 type="button"
                 onClick={onConnectWallet}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 ${
+                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-mono font-bold transition flex items-center gap-1.5 shadow-sm shrink-0 ${
                   walletAddress
                     ? 'bg-[#0d1629] border-emerald-700/70 text-emerald-300'
                     : 'bg-blue-600 hover:bg-blue-500 border-blue-500 text-white'
@@ -129,8 +128,8 @@ export default function MobileView({
           </div>
 
           <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
+            <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1 flex items-center justify-between">
+              <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={handleRefillGas}
@@ -139,7 +138,7 @@ export default function MobileView({
                 >
                   ⚡
                 </button>
-                <span className="text-[10px] text-slate-400 font-mono uppercase font-semibold">Gas Tank:</span>
+                <span className="text-[9px] text-slate-400 font-mono uppercase font-semibold">Gas:</span>
                 <button
                   type="button"
                   onClick={handleRefillGas}
@@ -148,7 +147,7 @@ export default function MobileView({
                   (+Refill)
                 </button>
               </div>
-              <span className="text-xs font-extrabold text-cyan-300 font-mono">{gasTank} SOL</span>
+              <span className="text-xs font-bold text-cyan-300 font-mono">{gasTank} SOL</span>
             </div>
 
             <button
@@ -158,7 +157,7 @@ export default function MobileView({
                 setVerifyResult(null);
                 setVerifyKey('');
               }}
-              className="bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 hover:border-cyan-600 text-cyan-300 text-xs font-mono font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition shrink-0"
+              className="bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 text-cyan-300 text-[11px] font-mono font-bold px-2.5 py-1 rounded-xl flex items-center gap-1 transition shrink-0"
             >
               <span>🔍</span>
               <span>Verify Key</span>
@@ -170,7 +169,7 @@ export default function MobileView({
             <button
               type="button"
               onClick={() => setCurrentTab('MARKET')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+              className={`py-1 rounded-lg transition flex items-center justify-center gap-1 ${
                 currentTab === 'MARKET' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -179,7 +178,7 @@ export default function MobileView({
             <button
               type="button"
               onClick={() => setCurrentTab('BOT')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+              className={`py-1 rounded-lg transition flex items-center justify-center gap-1 ${
                 currentTab === 'BOT' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -188,7 +187,7 @@ export default function MobileView({
             <button
               type="button"
               onClick={() => setCurrentTab('VENDOR')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+              className={`py-1 rounded-lg transition flex items-center justify-center gap-1 ${
                 currentTab === 'VENDOR' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -197,7 +196,7 @@ export default function MobileView({
             <button
               type="button"
               onClick={() => setCurrentTab('ADMIN')}
-              className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
+              className={`py-1 rounded-lg transition flex items-center justify-center gap-1 ${
                 currentTab === 'ADMIN' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -211,21 +210,21 @@ export default function MobileView({
           
           {/* TAB 1: MARKETPLACE */}
           {currentTab === 'MARKET' && (
-            <div className="w-full space-y-3">
+            <div className="w-full space-y-2.5">
               {/* Search Bar */}
-              <div className="bg-[#0b1329] border border-slate-800 rounded-xl px-3 py-2 flex items-center gap-2">
+              <div className="bg-[#0b1329] border border-slate-800 rounded-xl px-2.5 py-1.5 flex items-center gap-2">
                 <span className="text-cyan-400 text-xs">🔍</span>
                 <input
                   type="text"
-                  placeholder="Search license, compute asset, SKU..."
+                  placeholder="Search license or SKU..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent text-xs text-slate-200 placeholder-slate-500 outline-none w-full font-mono"
                 />
               </div>
 
-              {/* Product Cards */}
-              <div className="space-y-2.5">
+              {/* Ramping & Compact Product Cards */}
+              <div className="space-y-2">
                 {filteredProducts.map((prod) => {
                   const isSettling = activePurchase === prod.id;
                   const usdPrice = (Number(prod.priceSol) * solPriceUsd).toFixed(2);
@@ -233,28 +232,28 @@ export default function MobileView({
                   return (
                     <div
                       key={prod.id || prod.sku}
-                      className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between gap-3 shadow-md hover:border-cyan-500/40 transition"
+                      className="bg-[#0b1222] border border-slate-800/90 rounded-xl p-2.5 flex flex-col justify-between gap-2 shadow-sm"
                     >
                       <div>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[9px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-1.5 py-0.5 rounded">
                             {prod.sku}
                           </span>
-                          <span className="text-[10px] font-mono text-slate-500">
-                            Seller: {prod.seller || 'Verified'}
+                          <span className="text-[9px] font-mono text-slate-500 truncate max-w-[140px]">
+                            Seller: {prod.seller || (prod.vendorWallet ? `${prod.vendorWallet.slice(0, 4)}...${prod.vendorWallet.slice(-4)}` : 'Verified')}
                           </span>
                         </div>
-                        <h3 className="font-bold text-white text-xs leading-snug">{prod.title}</h3>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                        <h3 className="font-bold text-white text-xs leading-snug line-clamp-1">{prod.title}</h3>
+                        <p className="text-[10px] text-slate-400 mt-0.5 leading-snug line-clamp-2">
                           {prod.description}
                         </p>
                       </div>
 
-                      <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
+                      <div className="pt-2 border-t border-slate-800/70 flex items-center justify-between">
                         <div>
-                          <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
-                          <div className="flex items-baseline gap-1.5 font-mono">
-                            <span className="text-sm font-extrabold text-cyan-400">
+                          <span className="text-[8px] text-slate-500 font-mono block leading-none">SETTLEMENT</span>
+                          <div className="flex items-baseline gap-1 mt-0.5 font-mono">
+                            <span className="text-xs font-bold text-cyan-400">
                               {prod.priceSol} SOL
                             </span>
                             <span className="text-[9px] text-slate-500">
@@ -263,12 +262,12 @@ export default function MobileView({
                           </div>
                         </div>
 
-                        {/* TOMBOL BUY MOBILE RESMI */}
+                        {/* Tombol Buy Ukuran Pas */}
                         <button
                           type="button"
                           disabled={isSettling}
                           onClick={() => onBuyProduct && onBuyProduct(prod)}
-                          className={`font-mono font-bold text-xs px-3.5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition ${
+                          className={`font-mono font-bold text-[11px] px-2.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1 transition ${
                             isSettling
                               ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
                               : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white'
@@ -276,7 +275,7 @@ export default function MobileView({
                         >
                           {isSettling ? (
                             <>
-                              <span className="animate-spin text-xs">🌀</span>
+                              <span className="animate-spin text-[10px]">🌀</span>
                               <span>Settling...</span>
                             </>
                           ) : (
@@ -296,8 +295,8 @@ export default function MobileView({
 
           {/* TAB 2: AGENT TELEMETRY */}
           {currentTab === 'BOT' && (
-            <div className="space-y-3">
-              <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 shadow-md space-y-3">
+            <div className="space-y-2.5">
+              <div className="bg-[#0b1222] border border-slate-800 rounded-xl p-3 shadow-md space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${isBotRunning ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`}></span>
@@ -309,17 +308,17 @@ export default function MobileView({
                 </div>
 
                 <div>
-                  <h2 className="text-sm font-bold text-white leading-snug">
+                  <h2 className="text-xs font-bold text-white leading-snug">
                     Machine-to-Machine Autonomous Buyer
                   </h2>
-                  <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">
+                  <p className="text-[10px] text-slate-400 leading-relaxed mt-0.5">
                     Daemon monitors API quotas, deducts Gas Tank, and autonomously executes on-chain 90/5/5 split fees.
                   </p>
                 </div>
 
-                <div className="bg-[#060a12] border border-slate-800/80 rounded-xl p-2.5 flex items-center justify-between">
+                <div className="bg-[#060a12] border border-slate-800/80 rounded-lg p-2 flex items-center justify-between">
                   <div>
-                    <span className="text-[9px] text-slate-500 font-mono uppercase block">Execution Mode</span>
+                    <span className="text-[8px] text-slate-500 font-mono uppercase block">Execution Mode</span>
                     <span className={`text-xs font-bold font-mono ${isBotRunning ? 'text-emerald-400' : 'text-slate-400'}`}>
                       {isBotRunning ? '● AUTO-PILOT RUNNING' : '○ MANUAL MODE'}
                     </span>
@@ -328,7 +327,7 @@ export default function MobileView({
                   <button
                     type="button"
                     onClick={() => setIsBotRunning(!isBotRunning)}
-                    className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition shadow ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition shadow ${
                       isBotRunning
                         ? 'bg-rose-600 hover:bg-rose-500 text-white'
                         : 'bg-emerald-600 hover:bg-emerald-500 text-white'
@@ -339,43 +338,43 @@ export default function MobileView({
                 </div>
 
                 <div className="pt-2 border-t border-slate-800/80 grid grid-cols-3 gap-1.5 text-center font-mono">
-                  <div className="bg-[#060a12] p-1.5 rounded-lg border border-slate-800/60">
-                    <span className="text-[9px] text-slate-500 block">Vendor</span>
+                  <div className="bg-[#060a12] p-1 rounded border border-slate-800/60">
+                    <span className="text-[8px] text-slate-500 block">Vendor</span>
                     <span className="text-xs font-bold text-emerald-400">90%</span>
                   </div>
-                  <div className="bg-[#060a12] p-1.5 rounded-lg border border-slate-800/60">
-                    <span className="text-[9px] text-slate-500 block">Admin</span>
+                  <div className="bg-[#060a12] p-1 rounded border border-slate-800/60">
+                    <span className="text-[8px] text-slate-500 block">Admin</span>
                     <span className="text-xs font-bold text-cyan-400">5%</span>
                   </div>
-                  <div className="bg-[#060a12] p-1.5 rounded-lg border border-slate-800/60">
-                    <span className="text-[9px] text-slate-500 block">Affiliate</span>
+                  <div className="bg-[#060a12] p-1 rounded border border-slate-800/60">
+                    <span className="text-[8px] text-slate-500 block">Affiliate</span>
                     <span className="text-xs font-bold text-amber-400">5%</span>
                   </div>
                 </div>
               </div>
 
               {/* M2M Telemetry Feed */}
-              <div className="bg-[#070d19] border border-slate-800/80 rounded-2xl p-3 font-mono text-[11px] space-y-2 shadow-inner">
-                <div className="text-slate-400 font-bold flex items-center justify-between pb-1.5 border-b border-slate-800/80">
+              <div className="bg-[#070d19] border border-slate-800/80 rounded-xl p-2.5 font-mono text-[10px] space-y-2 shadow-inner">
+                <div className="text-slate-400 font-bold flex items-center justify-between pb-1 border-b border-slate-800/80">
                   <span className="flex items-center gap-1.5">
                     <span>📟</span> <span>M2M Execution Telemetry</span>
                   </span>
                   <button 
-                    type="button"
+                    type="button" 
                     onClick={() => setBotLogs([])}
-                    className="text-[10px] text-slate-500 hover:text-slate-300 underline"
+                    className="text-[9px] text-slate-500 hover:text-slate-300 underline"
                   >
                     Clear
                   </button>
                 </div>
                 
-                <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
                   {botLogs.map((log, idx) => {
                     const tag = log.tag || log.type || 'SYS';
                     return (
                       <div key={log.id || idx} className="leading-tight break-all">
-                        <span className="text-slate-600 mr-1.5">[{log.time}]</span>
-                        <span className={`font-bold mr-1.5 ${
+                        <span className="text-slate-600 mr-1">[{log.time}]</span>
+                        <span className={`font-bold mr-1 ${
                           tag === 'M2M' || tag === 'TRIG' ? 'text-purple-400' :
                           tag === 'TX' ? 'text-emerald-400' :
                           tag === 'KEY' ? 'text-amber-300' :
@@ -393,91 +392,91 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 3: VENDOR PORTAL (VERIFIED MERCHANTS ONLY) --- */}
-{currentTab === 'VENDOR' && (
-  <div className="w-full">
-    {!isVendor ? (
-      <div className="bg-[#0b1222] border border-cyan-900/50 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
-        <div className="w-12 h-12 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-          🛡️
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-            Verified Merchant Portal
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-            {walletAddress ? (
-              <>
-                Wallet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> is a standard buyer account and is not whitelisted for merchant asset creation.
-              </>
-            ) : (
-              'Please connect an approved vendor wallet to access catalog and revenue management.'
-            )}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onConnectWallet}
-          className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2.5 rounded-xl transition shadow flex items-center justify-center gap-2"
-        >
-          <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
-        </button>
-      </div>
-    ) : (
-      <VendorPortal
-        vendorWallet={walletAddress}
-        products={products}
-        onAddProduct={onAddProduct}
-        onUpdateProduct={onUpdateProduct}
-        onDeleteProduct={onDeleteProduct}
-        sales={merchantSales}
-      />
-    )}
-  </div>
-)}
+          {/* TAB 3: VENDOR PORTAL */}
+          {currentTab === 'VENDOR' && (
+            <div className="w-full">
+              {!isVendor ? (
+                <div className="bg-[#0b1222] border border-cyan-900/50 rounded-xl p-5 text-center space-y-3 my-2 font-mono shadow-xl">
+                  <div className="w-10 h-10 mx-auto bg-slate-900 border border-cyan-800/50 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                    🛡️
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Verified Merchant Portal
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1 font-sans leading-relaxed">
+                      {walletAddress ? (
+                        <>
+                          Wallet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> is a standard buyer account and is not whitelisted for merchant asset creation.
+                        </>
+                      ) : (
+                        'Please connect an approved vendor wallet to access catalog and revenue management.'
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onConnectWallet}
+                    className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2 rounded-xl transition shadow flex items-center justify-center gap-2"
+                  >
+                    <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+                  </button>
+                </div>
+              ) : (
+                <VendorPortal
+                  vendorWallet={walletAddress}
+                  products={products}
+                  onAddProduct={onAddProduct}
+                  onUpdateProduct={onUpdateProduct}
+                  onDeleteProduct={onDeleteProduct}
+                  sales={merchantSales}
+                />
+              )}
+            </div>
+          )}
 
-          {/* TAB 4: ADMIN CONSOLE (TERKUNCI KETAT) */}
-{currentTab === 'ADMIN' && (
-  <div className="w-full">
-    {!isAdmin ? (
-      <div className="bg-[#0b1222] border border-red-900/50 rounded-2xl p-6 text-center space-y-4 my-4 font-mono shadow-xl">
-        <div className="w-12 h-12 mx-auto bg-slate-900 border border-red-800/50 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
-          ⛔
+          {/* TAB 4: ADMIN CONSOLE */}
+          {currentTab === 'ADMIN' && (
+            <div className="w-full">
+              {!isAdmin ? (
+                <div className="bg-[#0b1222] border border-red-900/50 rounded-xl p-5 text-center space-y-3 my-2 font-mono shadow-xl">
+                  <div className="w-10 h-10 mx-auto bg-slate-900 border border-red-800/50 rounded-xl flex items-center justify-center text-xl shadow-inner">
+                    ⛔
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider">
+                      Access Denied: Admin Only
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-1 font-sans leading-relaxed">
+                      {walletAddress ? (
+                        <>
+                          Dompet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> tidak memiliki izin administrator.
+                        </>
+                      ) : (
+                        'Silakan hubungkan dompet resmi Admin untuk membuka panel audit.'
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onConnectWallet}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-2 rounded-xl transition shadow flex items-center justify-center gap-2"
+                  >
+                    <span>👛</span> {walletAddress ? 'Switch Wallet' : 'Connect Admin Wallet'}
+                  </button>
+                </div>
+              ) : (
+                <AdminPortal
+                  sales={merchantSales}
+                  onClearSales={onClearSales}
+                  products={products}
+                  onDeleteProduct={onDeleteProduct}
+                  onResetProducts={onResetProducts}
+                />
+              )}
+            </div>
+          )}
         </div>
-        <div>
-          <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
-            Access Denied: Admin Only
-          </h3>
-          <p className="text-xs text-slate-400 mt-1 font-sans leading-relaxed">
-            {walletAddress ? (
-              <>
-                Dompet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> tidak memiliki izin administrator.
-              </>
-            ) : (
-              'Silakan hubungkan dompet resmi Admin untuk membuka panel audit.'
-            )}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onConnectWallet}
-          className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow flex items-center justify-center gap-2"
-        >
-          <span>👛</span> {walletAddress ? 'Switch Wallet' : 'Connect Admin Wallet'}
-        </button>
-      </div>
-    ) : (
-      <AdminPortal
-        sales={merchantSales}
-        onClearSales={onClearSales}
-        products={products}
-        onDeleteProduct={onDeleteProduct}
-        onResetProducts={onResetProducts}
-      />
-    )}
-  </div>
-)}
-</div>
 
         {/* VERIFY MODAL */}
         {showVerifyModal && (
