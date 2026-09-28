@@ -16,7 +16,7 @@ export const connection = new Connection(
 const PROTOCOL_ADMIN_VAULT = 'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny';
 
 // Wallet Fallback untuk Affiliate jika pembeli tidak membawa kode referral
-const DEFAULT_AFFILIATE_VAULT = 'H8XSVM7UDZbk5eFhzWMLU5WPKZwNLBo85wGbrfPDX6Gw';
+const DEFAULT_AFFILIATE_VAULT = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
 
 /**
  * Eksekusi Pembelian On-Chain Riil (Devnet):
