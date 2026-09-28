@@ -365,7 +365,6 @@ export default function App() {
 
     // 🔒 PENCEGAH UTAMA: Jika pembeli manual belum konek wallet, wajibkan connect dulu!
     if (!isAgentAuto && (!isWalletConnected || !hasWallet)) {
-      alert('Please connect your Solana wallet (Phantom / Solflare) first to make a purchase!');
       setShowWalletModal(true);
       return;
     }
