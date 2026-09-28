@@ -42,16 +42,37 @@ export default function Footer() {
 
   return (
     <footer className="w-full border-t border-slate-800/80 bg-[#080d1a]/90 backdrop-blur-sm mt-auto py-5 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono">
         
         {/* 1. Copyright Text */}
-        <div className="text-slate-400 text-center sm:text-left text-[11px]">
+        <div className="text-slate-400 text-center md:text-left text-[11px]">
           <span>© 2026 </span>
           <span className="text-cyan-400 font-bold">AutonPay</span>
           <span> PayFi Rail. All rights reserved.</span>
         </div>
 
-        {/* 2. Social Links & Icons */}
+        {/* 2. Proposal & Financial Defense Documentation Links */}
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
+          <a
+            href="/AutonPay_Grant_Proposal.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+          >
+            <span>📄</span> Grant Proposal ↗
+          </a>
+
+          <a
+            href="/autonpay_roadmap_defense.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+          >
+            <span>📊</span> Financial Defense ↗
+          </a>
+        </div>
+
+        {/* 3. Social Links & Icons */}
         <div className="flex items-center gap-2">
           {socialLinks.map((item) => (
             <a
