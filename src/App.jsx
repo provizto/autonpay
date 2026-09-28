@@ -476,6 +476,7 @@ const handleClearSales = async () => {
           setGasTank={setAgentVaultBalance}
           botLogs={terminalLogs}
           setBotLogs={setTerminalLogs}
+          activePurchase={activePurchase}
           products={products}
           onAddProduct={handleAddProduct}
           onUpdateProduct={handleUpdateProduct}

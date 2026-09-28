@@ -3,7 +3,6 @@ import VendorPortal from './vendor/VendorPortal';
 import AdminPortal from './admin/AdminPortal';
 import AutonPayLogo from './AutonPayLogo';
 import { verifyLicenseOnDb } from '../services/settlements';
-import Footer from './Footer';
 
 export default function MobileView({
   wallet,
@@ -16,6 +15,7 @@ export default function MobileView({
   botLogs: externalBotLogs,
   setBotLogs: externalSetBotLogs,
   logs: externalLogs,
+  activePurchase, // Status loading tombol buy
   products = [],
   onAddProduct,
   onUpdateProduct,
@@ -23,14 +23,14 @@ export default function MobileView({
   onResetProducts,
   merchantSales = [],
   onClearSales,
-  onBuyProduct,
+  onBuyProduct, // Pemicu transaksi Solana Devnet
 }) {
-  // 4 Mobile Navigation Tabs: 'MARKET' | 'BOT' | 'VENDOR' | 'ADMIN'
   const [currentTab, setCurrentTab] = useState('MARKET');
+  const [searchQuery, setSearchQuery] = useState('');
   
   const walletAddress = typeof wallet === 'string' ? wallet : wallet?.address;
 
-  // Autonomous Agent States
+  // Bot State
   const [localIsBotRunning, setLocalIsBotRunning] = useState(false);
   const isBotRunning = externalIsBotRunning !== undefined ? externalIsBotRunning : localIsBotRunning;
   const setIsBotRunning = externalSetIsBotRunning || setLocalIsBotRunning;
@@ -47,13 +47,12 @@ export default function MobileView({
   const botLogs = externalBotLogs || externalLogs || localBotLogs;
   const setBotLogs = externalSetBotLogs || setLocalBotLogs;
 
-  // License Key Verification Modal States
+  // Verify Modal
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [verifyKey, setVerifyKey] = useState('');
   const [verifyResult, setVerifyResult] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  // Refill Gas Tank Handler
   const handleRefillGas = () => {
     setGasTank((prev) => parseFloat((prev + 1.0).toFixed(3)));
     setBotLogs((l) => [
@@ -62,53 +61,11 @@ export default function MobileView({
     ]);
   };
 
-  // M2M Autonomous Purchasing Simulation
-  useEffect(() => {
-    let interval = null;
-    if (isBotRunning && !externalBotLogs) {
-      interval = setInterval(() => {
-        const time = new Date().toLocaleTimeString('en-US');
-        const price = 0.050;
-
-        setGasTank((prev) => {
-          if (prev < price) {
-            setIsBotRunning(false);
-            setBotLogs((l) => [
-              { id: Date.now(), time, tag: 'ERR', msg: 'Agent Gas Tank depleted. Auto-pilot paused.' },
-              ...l.slice(0, 7)
-            ]);
-            return prev;
-          }
-
-          const updatedGas = parseFloat((prev - price).toFixed(3));
-          const vendorCut = (price * 0.90).toFixed(4);
-          const adminCut = (price * 0.05).toFixed(4);
-          const affiliateCut = (price * 0.05).toFixed(4);
-          const txHash = '5wK' + Math.random().toString(36).substring(2, 6) + 'dev';
-          const generatedKey = 'AUTON-' + Math.random().toString(36).substring(2, 7).toUpperCase() + '-SOL';
-
-          setBotLogs((l) => [
-            { id: Date.now() + 1, time, tag: 'KEY', msg: `License issued: ${generatedKey} -> Injected into agent.` },
-            { id: Date.now() + 2, time, tag: 'TX', msg: `Tx: ${txHash}... | Vendor: +${vendorCut} SOL | Admin: +${adminCut} SOL | Affiliate: +${affiliateCut} SOL` },
-            { id: Date.now() + 3, time, tag: 'M2M', msg: `AI quota low. Auto-purchased API-LLM-10M (${price} SOL)` },
-            ...l.slice(0, 6)
-          ]);
-
-          return updatedGas;
-        });
-      }, 6500);
-    }
-    return () => clearInterval(interval);
-  }, [isBotRunning, externalBotLogs, setIsBotRunning, setGasTank, setBotLogs]);
-
-  // Real Database License Verifier (Supabase)
   const handleVerify = async (e) => {
     e.preventDefault();
     if (!verifyKey.trim()) return;
-
     setIsVerifying(true);
     setVerifyResult(null);
-
     try {
       const res = await verifyLicenseOnDb(verifyKey.trim());
       setVerifyResult(res);
@@ -119,16 +76,21 @@ export default function MobileView({
     }
   };
 
+  const filteredProducts = products.filter((p) => {
+    return (
+      !searchQuery ||
+      (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
+
   return (
     <div className="w-full min-h-screen bg-[#060a12] text-slate-100 font-sans flex justify-center overflow-x-hidden">
       <div className="w-full max-w-md min-h-screen px-3 pt-3 pb-20 flex flex-col justify-start box-border">
         
-        {/* ======================================================== */}
-        {/* 1. MOBILE HEADER                                         */}
-        {/* ======================================================== */}
+        {/* HEADER */}
         <div className="w-full mb-3 space-y-2.5">
-          
-          {/* Row 1: Logo & Wallet Button */}
           <div className="flex items-center justify-between gap-2">
             <AutonPayLogo size={32} withText={true} />
 
@@ -146,7 +108,6 @@ export default function MobileView({
             </button>
           </div>
 
-          {/* Row 2: Gas Tank (+Refill) & Verify Key Button */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -162,7 +123,7 @@ export default function MobileView({
                 <button
                   type="button"
                   onClick={handleRefillGas}
-                  className="text-[9px] text-cyan-400 font-mono hover:underline active:opacity-70"
+                  className="text-[9px] text-cyan-400 font-mono hover:underline"
                 >
                   (+Refill)
                 </button>
@@ -184,124 +145,136 @@ export default function MobileView({
             </button>
           </div>
 
-          {/* Row 3: Navigation Tabs */}
+          {/* TABS */}
           <div className="grid grid-cols-4 bg-[#0b1222] border border-slate-800/90 p-1 rounded-xl gap-1 text-[11px] font-mono font-bold">
             <button
               type="button"
               onClick={() => setCurrentTab('MARKET')}
               className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
-                currentTab === 'MARKET'
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                currentTab === 'MARKET' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>🛍️</span> <span>Market</span>
             </button>
-
             <button
               type="button"
               onClick={() => setCurrentTab('BOT')}
               className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
-                currentTab === 'BOT'
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                currentTab === 'BOT' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>🤖</span> <span>Agent</span>
             </button>
-
             <button
               type="button"
               onClick={() => setCurrentTab('VENDOR')}
               className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
-                currentTab === 'VENDOR'
-                  ? 'bg-cyan-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                currentTab === 'VENDOR' ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>📦</span> <span>Vendor</span>
             </button>
-
             <button
               type="button"
               onClick={() => setCurrentTab('ADMIN')}
               className={`py-1.5 rounded-lg transition flex items-center justify-center gap-1 ${
-                currentTab === 'ADMIN'
-                  ? 'bg-purple-600 text-white shadow'
-                  : 'text-slate-400 hover:text-white'
+                currentTab === 'ADMIN' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'
               }`}
             >
               <span>⚙️</span> <span>Admin</span>
             </button>
           </div>
-
         </div>
 
-        {/* ======================================================== */}
-        {/* 2. TAB CONTENTS                                          */}
-        {/* ======================================================== */}
+        {/* CONTENTS */}
         <div className="flex-1 w-full mt-1">
           
-          {/* --- TAB 1: SINGLE STREAMLINED MARKETPLACE LIST (100% BEBAS DOBEL) --- */}
+          {/* TAB 1: MARKETPLACE */}
           {currentTab === 'MARKET' && (
-            <div className="w-full space-y-2 pb-4">
-              <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-400 px-1 pb-1">
-                <span>AVAILABLE COMPUTE LICENSES</span>
-                <span className="text-[10px] text-cyan-400">90/5/5 Split Rail</span>
+            <div className="w-full space-y-3">
+              {/* Search Bar */}
+              <div className="bg-[#0b1329] border border-slate-800 rounded-xl px-3 py-2 flex items-center gap-2">
+                <span className="text-cyan-400 text-xs">🔍</span>
+                <input
+                  type="text"
+                  placeholder="Search license, compute asset, SKU..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-transparent text-xs text-slate-200 placeholder-slate-500 outline-none w-full font-mono"
+                />
               </div>
 
-              {products.map((p) => {
-                const usdValue = (p.priceSol * solPriceUsd).toFixed(2);
-                return (
-                  <div
-                    key={p.id}
-                    className="bg-[#0b1222] border border-slate-800/80 hover:border-cyan-500/40 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition"
-                  >
-                    {/* Info Produk */}
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg shrink-0">
-                        📦
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-white truncate leading-snug">
-                          {p.title}
-                        </h4>
-                        <div className="text-[10px] text-slate-500 font-mono truncate">
-                          {p.category} • {p.sku}
-                        </div>
-                      </div>
-                    </div>
+              {/* Product Cards */}
+              <div className="space-y-2.5">
+                {filteredProducts.map((prod) => {
+                  const isSettling = activePurchase === prod.id;
+                  const usdPrice = (Number(prod.priceSol) * solPriceUsd).toFixed(2);
 
-                    {/* Harga & Tombol Beli */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="text-right font-mono">
-                        <div className="text-xs font-bold text-cyan-400">
-                          {p.priceSol} SOL
+                  return (
+                    <div
+                      key={prod.id || prod.sku}
+                      className="bg-[#0b1222] border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between gap-3 shadow-md hover:border-cyan-500/40 transition"
+                    >
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[10px] font-mono font-bold bg-cyan-950/80 border border-cyan-800/60 text-cyan-300 px-2 py-0.5 rounded-lg">
+                            {prod.sku}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500">
+                            Seller: {prod.seller || 'Verified'}
+                          </span>
                         </div>
-                        <div className="text-[9px] text-slate-500">
-                          ≈ ${usdValue}
-                        </div>
+                        <h3 className="font-bold text-white text-xs leading-snug">{prod.title}</h3>
+                        <p className="text-[11px] text-slate-400 mt-1 leading-relaxed line-clamp-2">
+                          {prod.description}
+                        </p>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (onBuyProduct) {
-                          onBuyProduct(product);
-                          }
-                        }}
-                        className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xs px-4 py-2 rounded-xl active:scale-95 shadow-md"
-                      >
-                        ⚡ Buy
-                      </button>
+                      <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
+                        <div>
+                          <span className="text-[9px] text-slate-500 font-mono block">SETTLEMENT</span>
+                          <div className="flex items-baseline gap-1.5 font-mono">
+                            <span className="text-sm font-extrabold text-cyan-400">
+                              {prod.priceSol} SOL
+                            </span>
+                            <span className="text-[9px] text-slate-500">
+                              ≈ ${usdPrice}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* TOMBOL BUY MOBILE RESMI */}
+                        <button
+                          type="button"
+                          disabled={isSettling}
+                          onClick={() => onBuyProduct && onBuyProduct(prod)}
+                          className={`font-mono font-bold text-xs px-3.5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition ${
+                            isSettling
+                              ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 active:scale-95 text-white'
+                          }`}
+                        >
+                          {isSettling ? (
+                            <>
+                              <span className="animate-spin text-xs">🌀</span>
+                              <span>Settling...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>⚡</span>
+                              <span>Buy License</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           )}
 
-          {/* --- TAB 2: AGENT BOT SIMULATOR & TELEMETRY --- */}
+          {/* TAB 2: AGENT TELEMETRY */}
           {currentTab === 'BOT' && (
             <div className="space-y-3">
               <div className="bg-[#0b1222] border border-slate-800 rounded-2xl p-4 shadow-md space-y-3">
@@ -369,11 +342,8 @@ export default function MobileView({
                   </span>
                   <button 
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setBotLogs([]);
-                    }}
-                    className="text-[10px] text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded border border-slate-700 transition"
+                    onClick={() => setBotLogs([])}
+                    className="text-[10px] text-slate-500 hover:text-slate-300 underline"
                   >
                     Clear
                   </button>
@@ -403,7 +373,7 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 3: VENDOR PORTAL --- */}
+          {/* TAB 3: VENDOR PORTAL */}
           {currentTab === 'VENDOR' && (
             <div className="w-full">
               {!walletAddress ? (
@@ -440,7 +410,7 @@ export default function MobileView({
             </div>
           )}
 
-          {/* --- TAB 4: ADMIN CONSOLE --- */}
+          {/* TAB 4: ADMIN CONSOLE */}
           {currentTab === 'ADMIN' && (
             <div className="w-full">
               {!walletAddress ? (
@@ -475,19 +445,9 @@ export default function MobileView({
               )}
             </div>
           )}
-
         </div>
 
-        {/* ======================================================== */}
-        {/* FOOTER MOBILE                                           */}
-        {/* ======================================================== */}
-        <div className="pt-4 pb-2 w-full">
-          <Footer />
-        </div>
-
-        {/* ======================================================== */}
-        {/* 3. VERIFY LICENSE MODAL                                  */}
-        {/* ======================================================== */}
+        {/* VERIFY MODAL */}
         {showVerifyModal && (
           <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#0b1222] border border-slate-800 w-full max-w-sm rounded-2xl p-4 shadow-2xl space-y-3">
@@ -535,9 +495,7 @@ export default function MobileView({
 
               {verifyResult && (
                 <div className={`p-3 rounded-xl border text-xs font-mono ${
-                  verifyResult.valid 
-                    ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' 
-                    : 'bg-red-950/40 border-red-800 text-red-300'
+                  verifyResult.valid ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300' : 'bg-red-950/40 border-red-800 text-red-300'
                 }`}>
                   {verifyResult.valid ? (
                     <div className="space-y-1">
