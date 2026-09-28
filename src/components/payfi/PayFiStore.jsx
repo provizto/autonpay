@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { initialProducts } from '../../data/products';
 import { executePayFiPurchase } from '../../utils/solanaPay';
 
 // Multi-Wallet Auto Detection (Phantom, Solflare, Backpack, Solana Browser)
@@ -10,15 +9,15 @@ const getSolanaProvider = () => {
 
 export default function PayFiStore({ 
   solPriceUsd = 145, 
-  products: propProducts, 
+  products: propProducts = [], 
   onBuyProduct 
 }) {
-  const products = propProducts && propProducts.length > 0 ? propProducts : initialProducts;
+  const products = propProducts || [];
   const [loadingId, setLoadingId] = useState(null);
   const [receipt, setReceipt] = useState(null);
 
   const handleBuy = async (product) => {
-    // 1. Jika ada handler dari App.jsx, prioritaskan alur utama
+    // 1. Prioritize primary handler from App.jsx if provided
     if (onBuyProduct) {
       onBuyProduct(product);
       return;
@@ -29,14 +28,14 @@ export default function PayFiStore({
     try {
       const provider = getSolanaProvider();
 
-      // 2. Kunci: Wajib ada dompet Solana!
+      // 2. Require an active Solana wallet
       if (!provider) {
         alert('Solana wallet not detected! Please open this app inside Phantom, Solflare, or Backpack in-app browser.');
         setLoadingId(null);
         return;
       }
 
-      // 3. Jika wallet belum terkoneksi, minta connect terlebih dahulu
+      // 3. Request connection if not connected yet
       if (!provider.publicKey) {
         try {
           await provider.connect();
@@ -47,7 +46,7 @@ export default function PayFiStore({
         }
       }
 
-      // 4. Eksekusi Pembayaran On-Chain Asli
+      // 4. Execute on-chain settlement
       const res = await executePayFiPurchase({
         wallet: provider,
         vendorAddress: product.vendorWallet,
@@ -79,58 +78,64 @@ export default function PayFiStore({
       
       {/* Mobile Streamlined Asset List */}
       <div className="space-y-2">
-        {products.map((p) => {
-          const usdValue = (p.priceSol * solPriceUsd).toFixed(2);
-          const isBuying = loadingId === p.id;
+        {products.length === 0 ? (
+          <div className="bg-[#0b1222] border border-slate-800/80 p-6 rounded-2xl text-center text-slate-500 text-xs font-mono">
+            No live products available.
+          </div>
+        ) : (
+          products.map((p) => {
+            const usdValue = (p.priceSol * solPriceUsd).toFixed(2);
+            const isBuying = loadingId === p.id;
 
-          return (
-            <div
-              key={p.id}
-              className="bg-[#0b1222] border border-slate-800/80 hover:border-cyan-500/40 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition"
-            >
-              {/* Product Info */}
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg flex-shrink-0">
-                  📦
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-white truncate leading-snug">
-                    {p.title}
-                  </h4>
-                  <div className="text-[10px] text-slate-500 font-mono truncate">
-                    {p.category} • {p.sku}
+            return (
+              <div
+                key={p.id}
+                className="bg-[#0b1222] border border-slate-800/80 hover:border-cyan-500/40 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition"
+              >
+                {/* Product Info */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-lg flex-shrink-0">
+                    📦
                   </div>
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-bold text-white truncate leading-snug">
+                      {p.title}
+                    </h4>
+                    <div className="text-[10px] text-slate-500 font-mono truncate">
+                      {p.category} • {p.sku}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pricing & Buy Button */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="text-right font-mono">
+                    <div className="text-xs font-bold text-cyan-400">
+                      {p.priceSol} SOL
+                    </div>
+                    <div className="text-[9px] text-slate-500">
+                      ≈ ${usdValue}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isBuying}
+                    onClick={() => handleBuy(p)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition flex items-center gap-1 shadow ${
+                      isBuying
+                        ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95'
+                    }`}
+                  >
+                    <span>{isBuying ? '🌀' : '⚡'}</span>
+                    <span>{isBuying ? '...' : 'Buy'}</span>
+                  </button>
                 </div>
               </div>
-
-              {/* Pricing & Buy Button */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <div className="text-right font-mono">
-                  <div className="text-xs font-bold text-cyan-400">
-                    {p.priceSol} SOL
-                  </div>
-                  <div className="text-[9px] text-slate-500">
-                    ≈ ${usdValue}
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  disabled={isBuying}
-                  onClick={() => handleBuy(p)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold font-mono transition flex items-center gap-1 shadow ${
-                    isBuying
-                      ? 'bg-slate-800 text-slate-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white active:scale-95'
-                  }`}
-                >
-                  <span>{isBuying ? '🌀' : '⚡'}</span>
-                  <span>{isBuying ? '...' : 'Buy'}</span>
-                </button>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* Settlement Receipt Modal */}
