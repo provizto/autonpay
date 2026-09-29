@@ -724,6 +724,19 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* HEADER PRODUCT LIST DESKTOP */}
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800/80">
+  <div className="flex items-center gap-2">
+    <span className="text-cyan-400 text-lg">🏷️</span>
+    <h2 className="text-base font-bold text-white font-mono uppercase tracking-wide">
+      Product List ({filteredProducts ? filteredProducts.length : products.length})
+    </h2>
+  </div>
+  <span className="text-xs font-mono text-slate-400">
+    Devnet Real-Time Settlement
+  </span>
+</div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                       {filteredProducts.map((prod) => (
                         <div
@@ -767,7 +780,7 @@ export default function App() {
                               ) : (
                                 <>
                                   <span>⚡</span>
-                                  <span>Agent Buy</span>
+                                  <span>Buy License</span>
                                 </>
                               )}
                             </button>

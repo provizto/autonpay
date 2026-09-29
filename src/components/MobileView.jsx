@@ -29,6 +29,8 @@ export default function MobileView({
 }) {
   const [currentTab, setCurrentTab] = useState('MARKET');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const categories = ['All', ...new Set(products.map((p) => p.category).filter(Boolean))];
   
   const walletAddress = typeof wallet === 'string' ? wallet : wallet?.address;
 
@@ -79,12 +81,13 @@ export default function MobileView({
   };
 
   const filteredProducts = products.filter((p) => {
-    return (
+    const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    const matchSearch =
       !searchQuery ||
       (p.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (p.sku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.category || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
+      (p.category || '').toLowerCase().includes(searchQuery.toLowerCase());
+    return matchCategory && matchSearch;
   });
 
   return (
@@ -221,6 +224,34 @@ export default function MobileView({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-transparent text-xs text-slate-200 placeholder-slate-500 outline-none w-full font-mono"
                 />
+              </div>
+
+              {/* Tulisan List Products & Kapsul Kategori */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between text-xs font-mono px-0.5">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <span>📦</span> List Products ({filteredProducts.length})
+                  </span>
+                  <span className="text-[10px] text-slate-500">Devnet Live</span>
+                </div>
+
+                {/* Kapsul Kategori (Bisa di-swipe horizontal di layar HP) */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold whitespace-nowrap transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-blue-600 text-white shadow'
+                          : 'bg-[#0b1222] border border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Ramping & Compact Product Cards */}
