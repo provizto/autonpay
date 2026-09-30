@@ -18,13 +18,13 @@ const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPA
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Solana Devnet Configuration
-const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+const RPC_ENDPOINT = process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 const connection = new Connection(RPC_ENDPOINT, 'confirmed');
 
 // Protocol Wallets
-const TARGET_VENDOR = new PublicKey('7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB');
-const TARGET_ADMIN = new PublicKey('9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS');
-const TARGET_AFFILIATE = new PublicKey('FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh');
+const TARGET_VENDOR = new PublicKey('ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4');
+const TARGET_ADMIN = new PublicKey('ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4');
+const TARGET_AFFILIATE = new PublicKey('ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4');
 
 // Load or Generate Agent Keypair
 let agentKeypair;
@@ -59,11 +59,11 @@ async function executeAgentPurchase() {
   try {
     const balance = await connection.getBalance(AGENT_PUBKEY);
     const balanceSol = balance / LAMPORTS_PER_SOL;
-    console.log(`[BALANCE] Current Gas Tank: ${balanceSol.toFixed(4)} Devnet SOL`);
+    console.log(`[BALANCE] Current Gas Tank: ${balanceSol.toFixed(4)} SOL`);
 
     if (balanceSol < task.priceSol + 0.001) {
-      console.log(`⚠️ Insufficient Devnet balance to trigger on-chain TX.`);
-      console.log(`👉 Airdrop to agent wallet using: solana airdrop 1 ${AGENT_PUBKEY.toBase58()} --url devnet`);
+      console.log(`⚠️ Insufficient Mainnet SOL balance to trigger on-chain TX.`);
+      console.log(`👉 Fund agent wallet with real SOL: ${AGENT_PUBKEY.toBase58()}`);
       return;
     }
 
@@ -85,7 +85,7 @@ async function executeAgentPurchase() {
     transaction.feePayer = AGENT_PUBKEY;
     transaction.sign(agentKeypair);
 
-    console.log(`[TX] Broadcasting 90/5/5 atomic transfer to Solana Devnet...`);
+    console.log(`[TX] Broadcasting 90/5/5 atomic transfer to Solana Mainnet...`);
     const txSignature = await connection.sendRawTransaction(transaction.serialize());
     await connection.confirmTransaction({ signature: txSignature, blockhash, lastValidBlockHeight }, 'confirmed');
 
@@ -125,7 +125,7 @@ async function executeAgentPurchase() {
 // Poin 3: Daemon Loop (Berjalan berkala setiap 25 detik)
 console.log(`🚀 AUTONPAY DAEMON BOT ACTIVATED`);
 console.log(`Agent Wallet Address : ${AGENT_PUBKEY.toBase58()}`);
-console.log(`Settlement Node      : Solana Devnet`);
+console.log(`Settlement Node      : Solana Mainnet`);
 console.log(`Sync Target          : Supabase Settlements Table`);
 console.log(`Running loop every 25 seconds... (Press Ctrl+C to terminate)\n`);
 
@@ -135,4 +135,4 @@ executeAgentPurchase();
 // Loop berkelanjutan
 setInterval(() => {
   executeAgentPurchase();
-}, 25000);
+}, 900000);

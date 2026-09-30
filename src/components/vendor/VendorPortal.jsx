@@ -49,7 +49,7 @@ export default function VendorPortal({
         category: formData.category,
         priceSol: parseFloat(formData.priceSol),
         seller: vendorWallet ? `${vendorWallet.slice(0, 4)}...${vendorWallet.slice(-4)}` : 'Vendor-Self',
-        vendorWallet: vendorWallet || '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB',
+        vendorWallet: vendorWallet || 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4',
         instantAccessUrl: formData.instantAccessUrl || '',
         description: formData.description || 'Digital asset delivered via AutonPay rail.'
       };
@@ -111,7 +111,7 @@ export default function VendorPortal({
           </div>
           <h2 className="text-lg font-bold text-white">Merchant & Creator Dashboard</h2>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
-            Vendor Wallet: <span className="text-cyan-300 font-bold">{vendorWallet || 'Solana Devnet Node'}</span>
+            Vendor Wallet: <span className="text-cyan-300 font-bold">{vendorWallet || 'Solana Mainnet Node'}</span>
           </p>
         </div>
 

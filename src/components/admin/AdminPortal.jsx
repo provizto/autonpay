@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { ADMIN_WALLET_ADDRESS, DEFAULT_AFFILIATE_ADDRESS, DEVNET_RPC_URL } from '../../config/solanaConfig';
 
 // Default Protocol Wallets
-const PROTOCOL_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
-const PROTOCOL_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
-const PROTOCOL_DEVNET_RPC = 'https://api.devnet.solana.com';
+const PROTOCOL_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
+const PROTOCOL_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
+const PROTOCOL_DEVNET_RPC = 'https://api.mainnet-beta.solana.com';
 
 export default function AdminPortal({ 
   sales = [], 
@@ -71,7 +71,7 @@ export default function AdminPortal({
             <span className="text-xs bg-purple-950 border border-purple-800 text-purple-300 px-2 py-0.5 rounded font-mono font-bold">
               SUPERADMIN CONTROL
             </span>
-            <span className="text-xs font-mono text-emerald-400">● Devnet Settlement Engine Online</span>
+            <span className="text-xs font-mono text-emerald-400">● Mainnet Settlement Engine Online</span>
           </div>
           <h2 className="text-lg font-bold text-white">AutonPay Protocol Governance</h2>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
@@ -127,7 +127,7 @@ export default function AdminPortal({
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
           <span className="text-[10px] text-slate-400 uppercase block">Total Settlements</span>
           <span className="text-xl font-bold text-white mt-1 block">{sales.length} TXs</span>
-          <span className="text-[10px] text-emerald-500/80">Devnet Settlement Registry</span>
+          <span className="text-[10px] text-emerald-500/80">Mainnet Settlement Registry</span>
         </div>
       </div>
 
@@ -295,7 +295,7 @@ export default function AdminPortal({
                 ) : (
                   sales.map((sale) => {
                     const sig = sale.signature || sale.txSignature || '';
-                    const isRealOnChain = sig.length > 40 && !sig.endsWith('dev');
+                    const isRealOnChain = sig.length > 40 && !sig.endsWith('dev') && !sig.endsWith('sol');
 
                     return (
                       <tr key={sale.id} className="hover:bg-slate-800/30">
@@ -314,7 +314,7 @@ export default function AdminPortal({
                         <td className="py-2.5">
                           {isRealOnChain ? (
                             <a
-                              href={`https://solscan.io/tx/${sig}?cluster=devnet`}
+                              href={`https://solscan.io/tx/${sig}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-cyan-400 underline text-[10px] hover:text-cyan-300 font-bold"

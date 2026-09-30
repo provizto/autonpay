@@ -6,10 +6,10 @@ import {
   LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
 
-export const DEVNET_RPC = 'https://api.devnet.solana.com';
-export const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
-export const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
-export const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
+export const DEVNET_RPC = 'https://api.mainnet-beta.solana.com';
+export const DEFAULT_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
+export const DEFAULT_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
+export const DEFAULT_VENDOR_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 
 export async function executePayFiPayment({
   wallet,
@@ -66,6 +66,6 @@ export async function executePayFiPayment({
     signature,
     licenseId,
     productTitle,
-    explorerUrl: `https://solscan.io/tx/${signature}?cluster=devnet`
+    explorerUrl: `https://solscan.io/tx/${signature}`
   };
 }

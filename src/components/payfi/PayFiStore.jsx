@@ -160,7 +160,7 @@ export default function PayFiStore({
                 <div className="text-[10px] text-slate-400 pt-1">
                   Tx Signature:{' '}
                   <a
-                    href={`https://solscan.io/tx/${receipt.signature}?cluster=devnet`}
+                    href={`https://solscan.io/tx/${receipt.signature}`}
                     target="_blank"
                     rel="noreferrer"
                     className="text-cyan-400 underline font-bold"

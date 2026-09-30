@@ -13,6 +13,7 @@
 *-keypair.json
 agent-wallet.json
 *-wallet.json
+id.json
 
 # ==========================================
 # 2. DEPENDENCIES

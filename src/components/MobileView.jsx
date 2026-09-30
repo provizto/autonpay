@@ -45,7 +45,7 @@ export default function MobileView({
 
   const [localBotLogs, setLocalBotLogs] = useState([
     { id: 1, time: '12:00:01', tag: 'SYS', msg: 'AutonPay M2M Settlement Rail initialized.' },
-    { id: 2, time: '12:00:02', tag: 'NET', msg: 'Connected to Solana Devnet Gateway.' },
+    { id: 2, time: '12:00:02', tag: 'NET', msg: 'Connected to Solana Mainnet Gateway.' },
     { id: 3, time: '12:00:03', tag: 'CONF', msg: 'Fee split protocol active: Vendor 90% | Admin 5% | Affiliate 5%.' }
   ]);
   const botLogs = externalBotLogs || externalLogs || localBotLogs;
@@ -60,7 +60,7 @@ export default function MobileView({
   const handleRefillGas = () => {
     setGasTank((prev) => parseFloat((prev + 1.0).toFixed(3)));
     setBotLogs((l) => [
-      { id: Date.now(), time: new Date().toLocaleTimeString('en-US'), tag: 'SYS', msg: 'Agent Gas Tank refilled (+1.000 Devnet SOL).' },
+      { id: Date.now(), time: new Date().toLocaleTimeString('en-US'), tag: 'SYS', msg: 'Agent Gas Tank refilled (+1.000 SOL).' },
       ...l.slice(0, 7)
     ]);
   };
@@ -232,7 +232,7 @@ export default function MobileView({
                   <span className="font-bold text-white flex items-center gap-1.5">
                     <span>📦</span> List Products ({filteredProducts.length})
                   </span>
-                  <span className="text-[10px] text-slate-500">Devnet Live</span>
+                  <span className="text-[10px] text-slate-500">Mainnet Live</span>
                 </div>
 
                 {/* Kapsul Kategori (Bisa di-swipe horizontal di layar HP) */}
@@ -335,7 +335,7 @@ export default function MobileView({
                       {isBotRunning ? 'AUTONOMOUS ACTIVE' : 'AGENT DAEMON IDLE'}
                     </span>
                   </div>
-                  <span className="text-[10px] text-slate-500 font-mono">Solana Devnet</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Solana Mainnet</span>
                 </div>
 
                 <div>
@@ -568,7 +568,7 @@ export default function MobileView({
                         <div>Asset SKU: <strong className="text-white">{verifyResult.data.sku}</strong></div>
                         <div>Buyer: <strong className="text-white">{verifyResult.data.buyer?.slice(0, 6)}...{verifyResult.data.buyer?.slice(-4)}</strong></div>
                         <div>Status: <span className="text-emerald-400">{verifyResult.data.status}</span></div>
-                        <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}?cluster=devnet`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
+                        <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
                       </div>
                     </div>
                   ) : (

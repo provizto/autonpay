@@ -26,17 +26,15 @@ import Footer from './components/Footer';
 // ==========================================
 // SOLANA DEVNET & PROTOCOL WALLET CONFIG
 // ==========================================
-const DEVNET_RPC = 'https://api.devnet.solana.com';
+const DEVNET_RPC = 'https://api.mainnet-beta.solana.com';
 
-const DEFAULT_ADMIN_WALLET = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'; 
-const DEFAULT_AFFILIATE_WALLET = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
-const DEFAULT_VENDOR_WALLET = '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB';
+const DEFAULT_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4'; 
+const DEFAULT_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
+const DEFAULT_VENDOR_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 
 // Protocol Approved & Verified Merchant Whitelist
 const WHITELISTED_VENDORS = [
-  DEFAULT_ADMIN_WALLET,
-  DEFAULT_VENDOR_WALLET,
-  'BvmRYWTbkCwNqVUEeD7qgVqzM9rXh9egrDiWDBcsofny'
+  DEFAULT_ADMIN_WALLET
 ];
 
 // Multi-Wallet Auto Detection Fallback
@@ -105,8 +103,7 @@ export default function App() {
   const [whitelistedVendors, setWhitelistedVendors] = useState(() => {
     const saved = typeof window !== 'undefined' ? localStorage.getItem('autonpay_vendors') : null;
     return saved ? JSON.parse(saved) : [
-      '7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB',
-      '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS'
+      'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4'
     ];
   });
 
@@ -973,7 +970,7 @@ export default function App() {
                 <span className="text-slate-500">Tx Signature:</span>
                 {licenseModal.isRealOnChain ? (
                   <a 
-                    href={`https://solscan.io/tx/${licenseModal.txSignature}?cluster=devnet`}
+                    href={`https://solscan.io/tx/${licenseModal.txSignature}`}
                     target="_blank" 
                     rel="noreferrer" 
                     className="text-cyan-400 underline font-bold hover:text-cyan-300"
@@ -1154,7 +1151,7 @@ JSON.stringify({
                       <div>Asset SKU: <strong className="text-white">{verifyResult.data.sku}</strong></div>
                       <div>Buyer: <strong className="text-white">{verifyResult.data.buyer?.slice(0, 6)}...{verifyResult.data.buyer?.slice(-4)}</strong></div>
                       <div>Status: <span className="text-emerald-400">{verifyResult.data.status}</span></div>
-                      <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}?cluster=devnet`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
+                      <div>Tx: <a href={`https://solscan.io/tx/${verifyResult.data.txSignature}`} target="_blank" rel="noreferrer" className="text-cyan-400 underline">{verifyResult.data.txSignature?.slice(0, 10)}...</a></div>
                     </div>
                   </div>
                 ) : (

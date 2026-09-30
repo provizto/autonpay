@@ -6,17 +6,17 @@ import {
   LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
 
-// RPC Solana Devnet
+// RPC Solana Mainnet
 export const connection = new Connection(
-  import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+  import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
   'confirmed'
 );
 
-// Wallet Penampung Platform / Admin (Ganti jika ada wallet khusus)
-const PROTOCOL_ADMIN_VAULT = '9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS';
+// Wallet Admin Resmi Pump.fun
+const PROTOCOL_ADMIN_VAULT = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 
-// Wallet Fallback untuk Affiliate jika pembeli tidak membawa kode referral
-const DEFAULT_AFFILIATE_VAULT = 'FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh';
+// Fallback Affiliate diarahkan ke Admin
+const DEFAULT_AFFILIATE_VAULT = PROTOCOL_ADMIN_VAULT;
 
 /**
  * Eksekusi Pembelian On-Chain Riil (Devnet):
@@ -117,7 +117,7 @@ export async function executePayFiPurchase({
 
   return {
     signature,
-    explorerUrl: `https://solscan.io/tx/${signature}?cluster=devnet`,
+    explorerUrl: `https://solscan.io/tx/${signature}`,
     merchantCut: (vendorLamports / LAMPORTS_PER_SOL).toFixed(4),
     adminCut: (adminLamports / LAMPORTS_PER_SOL).toFixed(4),
     affiliateCut: (affiliateLamports / LAMPORTS_PER_SOL).toFixed(4),
