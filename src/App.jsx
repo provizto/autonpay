@@ -596,30 +596,6 @@ export default function App() {
                   <span>🔍</span> <span>Verify Key</span>
                 </button>
 
-                <div className="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2">
-                  <button 
-                    type="button" 
-                    onClick={handleRefillGas}
-                    className="text-xs hover:scale-110 active:scale-95 transition"
-                    title="Click to Refill Tank (+1.0 SOL)"
-                  >
-                    ⚡
-                  </button>
-                  <div className="text-right font-mono">
-                    <div className="text-[9px] text-slate-500 uppercase flex items-center justify-end gap-1">
-                      <span>Gas Tank</span>
-                      <button 
-                        type="button" 
-                        onClick={handleRefillGas}
-                        className="text-[9px] text-cyan-400 hover:underline"
-                      >
-                        (+Refill)
-                      </button>
-                    </div>
-                    <div className="text-xs font-bold text-cyan-400">{agentVaultBalance} SOL</div>
-                  </div>
-                </div>
-
                 <button
                   type="button"
                   onClick={handleConnectWallet}
@@ -730,7 +706,7 @@ export default function App() {
     </h2>
   </div>
   <span className="text-xs font-mono text-slate-400">
-    Devnet Real-Time Settlement
+    Mainnet Real-Time Settlement
   </span>
 </div>
 

@@ -130,42 +130,19 @@ export default function MobileView({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 bg-[#0b1222] border border-slate-800/90 rounded-xl px-2.5 py-1 flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={handleRefillGas}
-                  className="text-amber-400 text-xs hover:scale-110 active:scale-95 transition"
-                  title="Click to Refill Tank (+1.0 SOL)"
-                >
-                  ⚡
-                </button>
-                <span className="text-[9px] text-slate-400 font-mono uppercase font-semibold">Gas:</span>
-                <button
-                  type="button"
-                  onClick={handleRefillGas}
-                  className="text-[9px] text-cyan-400 font-mono hover:underline"
-                >
-                  (+Refill)
-                </button>
-              </div>
-              <span className="text-xs font-bold text-cyan-300 font-mono">{gasTank} SOL</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowVerifyModal(true);
-                setVerifyResult(null);
-                setVerifyKey('');
-              }}
-              className="bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 text-cyan-300 text-[11px] font-mono font-bold px-2.5 py-1 rounded-xl flex items-center gap-1 transition shrink-0"
-            >
-              <span>🔍</span>
-              <span>Verify Key</span>
-            </button>
-          </div>
+          {/* KODE BARU: BERSIH & RAMPING */}
+<button
+  type="button"
+  onClick={() => {
+    setShowVerifyModal(true);
+    setVerifyResult(null);
+    setVerifyKey('');
+  }}
+  className="w-full bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 text-cyan-300 text-xs font-mono font-bold py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
+>
+  <span>🔍</span>
+  <span>Verify License Key (Supabase DB)</span>
+</button>
 
           {/* TABS */}
           <div className="grid grid-cols-4 bg-[#0b1222] border border-slate-800/90 p-1 rounded-xl gap-1 text-[11px] font-mono font-bold">
