@@ -228,7 +228,7 @@ export default function MobileView({
 
               {/* Tulisan List Products & Kapsul Kategori */}
               <div className="space-y-1.5 pt-1">
-                <div className="flex items-center justify-between text-xs font-mono px-0.5">
+                <div className="flex items-center justify-between text-sm font-mono px-0.5">
                   <span className="font-bold text-white flex items-center gap-1.5">
                     <span>📦</span> List Products ({filteredProducts.length})
                   </span>
@@ -274,7 +274,7 @@ export default function MobileView({
                             Seller: {prod.seller || (prod.vendorWallet ? `${prod.vendorWallet.slice(0, 4)}...${prod.vendorWallet.slice(-4)}` : 'Verified')}
                           </span>
                         </div>
-                        <h3 className="font-bold text-white text-xs leading-snug line-clamp-1">{prod.title}</h3>
+                        <h3 className="font-bold text-white text-sm leading-snug line-clamp-1">{prod.title}</h3>
                         <p className="text-[10px] text-slate-400 mt-0.5 leading-snug line-clamp-2">
                           {prod.description}
                         </p>
@@ -282,12 +282,12 @@ export default function MobileView({
 
                       <div className="pt-2 border-t border-slate-800/70 flex items-center justify-between">
                         <div>
-                          <span className="text-[8px] text-slate-500 font-mono block leading-none">SETTLEMENT</span>
+                          <span className="text-[10px] text-slate-500 font-mono block leading-none">SETTLEMENT</span>
                           <div className="flex items-baseline gap-1 mt-0.5 font-mono">
                             <span className="text-xs font-bold text-cyan-400">
                               {prod.priceSol} SOL
                             </span>
-                            <span className="text-[9px] text-slate-500">
+                            <span className="text-[11px] text-slate-500">
                               ≈ ${usdPrice}
                             </span>
                           </div>
@@ -306,7 +306,7 @@ export default function MobileView({
                         >
                           {isSettling ? (
                             <>
-                              <span className="animate-spin text-[10px]">🌀</span>
+                              <span className="animate-spin text-xs">🌀</span>
                               <span>Settling...</span>
                             </>
                           ) : (
