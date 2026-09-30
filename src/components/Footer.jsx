@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function Footer() {
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
+  // Link resmi token $AUTON di Pump.fun
+  const PUMP_FUN_URL = "https://pump.fun/coin/2X7saQ967isTkJEP6FKgFuTzTWsH4ZMkCh1MDGDApump";
+
   const socialLinks = [
+    {
+      name: 'Pump.fun',
+      url: PUMP_FUN_URL,
+      icon: (
+        <svg className="w-4 h-4 fill-current text-emerald-400" viewBox="0 0 24 24">
+          <path d="M4.5 10.5C3.12 11.88 3.12 14.12 4.5 15.5L8.5 19.5C9.88 20.88 12.12 20.88 13.5 19.5L19.5 13.5C20.88 12.12 20.88 9.88 19.5 8.5L15.5 4.5C14.12 3.12 11.88 3.12 10.5 4.5L4.5 10.5ZM12 8L16 12L12.5 15.5L8.5 11.5L12 8Z" />
+        </svg>
+      )
+    },
     {
       name: 'GitHub',
       url: 'https://github.com/provizto/autonpay',
@@ -41,55 +55,112 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="w-full border-t border-slate-800/80 bg-[#080d1a]/90 backdrop-blur-sm mt-auto py-5 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono">
-        
-        {/* 1. Copyright Text */}
-        <div className="text-slate-400 text-center md:text-left text-[11px]">
-          <span>© 2026 </span>
-          <span className="text-cyan-400 font-bold">AutonPay</span>
-          <span> PayFi Rail. All rights reserved.</span>
-        </div>
-
-        {/* 2. Proposal & Financial Defense Documentation Links */}
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px]">
-          <a
-            href="/AutonPay_Grant_Proposal.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
-          >
-            <span>📄</span> Grant Proposal ↗
-          </a>
-
-          <a
-            href="/autonpay_capital_defense.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
-          >
-            <span>📊</span> Financial Defense ↗
-          </a>
-        </div>
-
-        {/* 3. Social Links & Icons */}
-        <div className="flex items-center gap-2">
-          {socialLinks.map((item) => (
-            <a
-              key={item.name}
-              href={item.url}
-              target="_blank"
-              rel="noreferrer"
-              title={item.name}
-              aria-label={item.name}
-              className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/60 text-slate-400 hover:text-cyan-300 flex items-center justify-center transition shadow-sm active:scale-95"
+    <>
+      <footer className="w-full border-t border-slate-800/80 bg-[#080d1a]/90 backdrop-blur-sm mt-auto py-5 px-4">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-mono">
+          
+          {/* Copyright & Disclaimer Trigger */}
+          <div className="text-slate-400 text-center md:text-left text-[11px]">
+            <span>© 2026 </span>
+            <span className="text-cyan-400 font-bold">AutonPay</span>
+            <span> PayFi Rail. </span>
+            <button
+              onClick={() => setShowDisclaimer(true)}
+              className="text-slate-500 hover:text-slate-300 underline underline-offset-2 ml-1 cursor-pointer transition"
             >
-              {item.icon}
-            </a>
-          ))}
-        </div>
+              Non-Custodial Disclaimer
+            </button>
+          </div>
 
-      </div>
-    </footer>
+          {/* Proposal, Defense, & Pump.fun Direct Badge */}
+          <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px]">
+            <a
+              href={PUMP_FUN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-300 hover:text-emerald-200 transition flex items-center gap-1.5 font-bold bg-emerald-950/40 border border-emerald-500/40 hover:border-emerald-400 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+            >
+              <span>💊</span> $AUTON on Pump.fun ↗
+            </a>
+
+            <a
+              href="/AutonPay_Grant_Proposal.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+            >
+              <span>📄</span> Grant Proposal ↗
+            </a>
+
+            <a
+              href="/Autonpay_Capital_Defense.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-slate-300 hover:text-cyan-300 transition flex items-center gap-1.5 font-bold bg-slate-900 border border-slate-800 hover:border-cyan-500/60 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+            >
+              <span>📊</span> Financial Defense ↗
+            </a>
+          </div>
+
+          {/* Social Icons */}
+          <div className="flex items-center gap-2">
+            {socialLinks.map((item) => (
+              <a
+                key={item.name}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={item.name}
+                aria-label={item.name}
+                className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 hover:border-cyan-500/60 text-slate-400 hover:text-cyan-300 flex items-center justify-center transition shadow-sm active:scale-95"
+              >
+                {item.icon}
+              </a>
+            ))}
+          </div>
+
+        </div>
+      </footer>
+
+      {/* Modal Non-Custodial Disclaimer */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono">
+          <div className="bg-[#0b1222] border border-slate-700 max-w-lg w-full rounded-2xl p-6 text-slate-300 text-xs shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+              <span className="text-cyan-400 font-bold uppercase tracking-wider text-sm flex items-center gap-2">
+                🛡️ Protocol Disclaimer
+              </span>
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="text-slate-400 hover:text-white text-base font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-3 leading-relaxed text-[11px] text-slate-400">
+              <p>
+                <strong className="text-slate-200">Non-Custodial Architecture:</strong> AutonPay is a decentralized, non-custodial software protocol deployed on the Solana blockchain. It never holds, controls, or escrows user funds.
+              </p>
+              <p>
+                <strong className="text-slate-200">Autonomous Settlement:</strong> All transactions and fee distributions (vendor, protocol, and referrals) are executed deterministically on-chain via smart contracts directly between peer wallets.
+              </p>
+              <p>
+                <strong className="text-slate-200">As-Is Software:</strong> The interface and smart contracts are provided on an "as-is" basis without warranties of any kind. Users are solely responsible for compliance with local regulations in their respective jurisdictions.
+              </p>
+            </div>
+
+            <div className="mt-5 pt-3 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-4 py-1.5 rounded-xl transition active:scale-95"
+              >
+                Understood
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
