@@ -141,7 +141,7 @@ export default function MobileView({
   className="w-full bg-[#0b1222] hover:bg-[#121c35] border border-cyan-900/60 text-cyan-300 text-xs font-mono font-bold py-1.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
 >
   <span>🔍</span>
-  <span>Verify License Key (Supabase DB)</span>
+  <span>Verify License Key</span>
 </button>
 
           {/* TABS */}
