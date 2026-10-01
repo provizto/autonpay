@@ -1,0 +1,22 @@
+{
+  "redirects": [
+    {
+      "source": "/((?!blocked.html).*)",
+      "has": [
+        {
+          "type": "header",
+          "key": "x-vercel-ip-country",
+          "value": "(KP|IR|SY|CU)"
+        }
+      ],
+      "destination": "/blocked.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
