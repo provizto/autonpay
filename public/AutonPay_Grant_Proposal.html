@@ -261,37 +261,38 @@
 
       <h2>1. Executive Summary</h2>
       <p>
-        <strong>AUTONPAY</strong> is an autonomous, high-throughput PayFi infrastructure protocol natively built on Solana. Designed for both autonomous AI agents (M2M) and human commerce, AutonPay eliminates manual invoicing and payment gateway fees through an on-chain <strong>Atomic 90/5/5 Fee Split Rail</strong>. When compute licenses, API credits, or digital assets are purchased, transactions execute deterministically in a single atomic bundle: <strong>90% goes instantly to the asset vendor</strong>, <strong>5% to the protocol admin treasury</strong>, and <strong>5% to the affiliate partner</strong>. Autonomous agents operate without friction using a dedicated <strong>Prepaid SOL Gas Tank</strong>, while all purchases receive cryptographic proof via Solana SPL Memo and automated license generation.
+        <strong>AUTONPAY</strong> is a production-grade, non-custodial PayFi infrastructure protocol natively deployed on Solana. Engineered for autonomous AI agents (M2M) and human software commerce, AutonPay eliminates manual billing, custodial counterparty risk, and intermediaries through an on-chain <strong>Atomic 90/5/5 Settlement Rail</strong>. When compute licenses, API credits, or digital assets are acquired, transactions execute deterministically in a single atomic bundle: <strong>90% settles directly to the verified vendor</strong>, <strong>5% to protocol treasury</strong>, and <strong>5% to the affiliate partner</strong>. The protocol integrates an autonomous settlement daemon (M2M bot execution), edge-level sanctions geo-fencing (OFAC compliance), role-gated merchant verification, and cryptographic license anchoring via Solana SPL Memo and Supabase Postgres ledgers.
       </p>
 
       <h2>2. Problem Statement & Market Inefficiencies</h2>
       <ul>
-        <li><strong>Friction in Agent-to-Agent (M2M) Commerce:</strong> Autonomous AI agents consuming decentralized LLMs, compute clusters, and data feeds cannot use credit cards or traditional payment rails to renew access quotas.</li>
-        <li><strong>Centralized Custodial Intermediaries:</strong> Traditional SaaS checkout platforms withhold merchant payouts for 7–30 days and take excessive commissions (5–15%).</li>
-        <li><strong>Fragmented Multi-Party Revenue Sharing:</strong> Distributing affiliate cuts and platform fees usually requires slow off-chain calculations and separate batch disbursements, leading to trust and reconciliation issues.</li>
-        <li><strong>Lack of Real-Time Verifiable Licensing:</strong> Buyers lack tamper-proof, on-chain cryptographic proof linking their software or model access key directly to a blockchain settlement transaction.</li>
+        <li><strong>Friction in Agent-to-Agent (M2M) Commerce:</strong> Autonomous AI agents consuming decentralized LLMs, compute clusters, and data feeds cannot interface with traditional fiat banking or legacy credit card rails to renew quotas autonomously.</li>
+        <li><strong>Custodial Counterparty & Regulatory Exposure:</strong> Traditional SaaS payment processors withhold merchant balances for 7–30 days while exposing operators to transmitter/escrow liabilities.</li>
+        <li><strong>Unverified & High-Risk Marketplace Catalogs:</strong> Open decentralized platforms often suffer from unauthorized asset spam or secondary liabilities without an authenticated vendor verification funnel.</li>
+        <li><strong>Lack of Real-Time Verifiable Licensing:</strong> Buyers lack tamper-proof, on-chain cryptographic proof linking their software or model access key directly to an immutable settlement block.</li>
       </ul>
 
       <h2>3. Core Technical Architecture (Atomic Transaction Pipeline)</h2>
       <div class="ascii-box">[ Solana PayFi Atomic Settlement Pipeline ]
 │
-├── 1. Autonomous Agent Quota & Gas Management
-│   ├── Client & Agent Telemetry Monitor (Real-Time API Quota & Task Tracking)
-│   ├── Prepaid Gas Tank Engine (Autonomous Execution Circuit Breaker on Low SOL)
-│   └── 1-Click Gas Refill Portal (+1.000 Devnet SOL Instant Replenishment)
+├── 1. Access Control, Compliance & Agent Telemetry
+│   ├── Edge Geofencing Firewall   (Vercel Edge Network OFAC Restricted Jurisdiction Filter)
+│   ├── Protocol Legal Disclaimer  (Non-Custodial Architecture, Finality & Tax Responsibility)
+│   ├── Merchant Gatekeeper Rail   (Role-Gated Whitelist & Curated Telegram Onboarding @provizto)
+│   └── Autonomous Settlement Bot  (Decoupled M2M Background Daemon Loop for Autonomous Purchasing)
 │
 ├── 2. Atomic 3-Way Split Execution (SystemProgram Transfer Pipeline)
-│   ├── Vendor Settlement Payout   (90% ➔ 7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB)
-│   ├── Protocol Platform Treasury (5%  ➔ 9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS)
-│   └── Affiliate Referral Pool    (5%  ➔ FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh)
+│   ├── Vendor Settlement Payout   (90% ➔ Direct to Whitelisted Vendor Wallet)
+│   ├── Protocol Platform Treasury (5%  ➔ Platform Admin Vault)
+│   └── Affiliate Referral Pool    (5%  ➔ Direct Affiliate Partner / Fallback Vault)
 │
-└── 3. Cryptographic Verification & Digital Delivery
+└── 3. Cryptographic Verification & Audit Sync
     ├── Solana SPL Memo Program    (MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr)
-    ├── Unique Key Issuance Engine (AUTON-[SKU]-[HASH]-SOL Format)
-    ├── Digital Delivery Anchor    (Direct Google Drive / GitHub / API Endpoint Dispatch)
-    └── Realtime Registry Sync     (Supabase Live Postgres Inflow & Audit Ledger)</div>
+    ├── Unique Key Issuance Engine (AUTON-[SKU]-[HASH]-SOL Cryptographic Key)
+    ├── Digital Delivery Anchor    (Direct Cloud Storage, API Credential, or Compute Endpoint)
+    └── Real-Time Ledger Sync      (Supabase Live Postgres Inflow Ledger & Auditable Logs)</div>
 
-      <h2>4. Protocol Specifications & On-Chain Verification</h2>
+      <h2>4. Protocol Specifications & Technical Verification</h2>
       <table class="data-table">
         <thead>
           <tr>
@@ -303,77 +304,56 @@
         <tbody>
           <tr>
             <td><strong>Atomic Settlement Rail</strong></td>
-            <td>Simultaneous multi-transfer payload via native Solana System Program instructions</td>
-            <td>Deterministic 90:5:5 Split (Devnet Verified)</td>
-          </tr>
-          <tr>
-            <td><strong>Smart Contract Program ID</strong></td>
-            <td>Custom AutonPay Protocol Settlement & Anchor Program ID</td>
-            <td>
-              <a href="https://solscan.io/account/HVHRr2JbMAT1zQ8N2vuWKctfV3ycvQYdDDzob1nqd6jD?cluster=devnet" target="_blank" class="mono">
-                HVHRr2JbMAT1zQ8N2vu... ↗
-              </a>
-            </td>
+            <td>Simultaneous multi-transfer payload via native Solana SystemProgram instructions</td>
+            <td>Deterministic 90:5:5 Split (Audited & Active)</td>
           </tr>
           <tr>
             <td><strong>SPL Memo Program ID</strong></td>
-            <td>Solana Standard SPL Memo v2 for immutably recording license IDs on-chain</td>
+            <td>Solana Standard SPL Memo v2 for immutably recording license IDs and audit hashes on-chain</td>
             <td>
-              <a href="https://solscan.io/account/MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr?cluster=devnet" target="_blank" class="mono">
+              <a href="https://solscan.io/account/MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr" target="_blank" class="mono">
                 MemoSq4gqABAXKb96qn... ↗
               </a>
             </td>
           </tr>
           <tr>
-            <td><strong>Admin Platform Wallet (5%)</strong></td>
-            <td>Designated protocol protocol fee treasury wallet address</td>
-            <td>
-              <a href="https://solscan.io/account/9bvD1899yYZCf2MKeuds59EXAGgVBwuFkrCS1Cgo3AhS?cluster=devnet" target="_blank" class="mono">
-                9bvD1899yYZCf2MKeud... ↗
-              </a>
-            </td>
+            <td><strong>Non-Custodial Architecture</strong></td>
+            <td>Direct peer-to-peer wallet execution; zero escrow, zero intermediate holding of funds</td>
+            <td>Client & Protocol Disclaimers Active</td>
           </tr>
           <tr>
-            <td><strong>Affiliate Pool Wallet (5%)</strong></td>
-            <td>Fallback decentralized affiliate commission destination</td>
-            <td>
-              <a href="https://solscan.io/account/FU6cLtPS4eUBy92xa96Fb7pdaFv8A93LdEpT7MyHi7uh?cluster=devnet" target="_blank" class="mono">
-                FU6cLtPS4eUBy92xa96... ↗
-              </a>
-            </td>
+            <td><strong>Regulatory Compliance</strong></td>
+            <td>Vercel Edge CDN Geo-Blocking (KP, IR, SY, CU sanctions) + Terms Modal gating</td>
+            <td>OFAC & International Baseline Active</td>
           </tr>
           <tr>
-            <td><strong>Primary Vendor Node (90%)</strong></td>
-            <td>Default registered vendor address for automated license issuance</td>
-            <td>
-              <a href="https://solscan.io/account/7LLjrqrfvg6qQKee8bX8XQyT9J8NFQWtyzzj2K8rGXpB?cluster=devnet" target="_blank" class="mono">
-                7LLjrqrfvg6qQKee8bX... ↗
-              </a>
-            </td>
+            <td><strong>Merchant Verification Rail</strong></td>
+            <td>Role-gated whitelist registry with manual compliance vetting prior to catalog publishing</td>
+            <td>Gated Onboarding via @provizto</td>
           </tr>
           <tr>
-            <td><strong>Autonomous M2M Engine</strong></td>
-            <td>Autonomous task-driven daemon with Gas Tank tracking and auto-signing</td>
-            <td>Real-Time Background Loop Active</td>
+            <td><strong>Autonomous M2M Bot Daemon</strong></td>
+            <td>Independent background settlement daemon running automated purchasing loops</td>
+            <td>Production bot.mjs Daemon Active</td>
           </tr>
           <tr>
-            <td><strong>Digital Asset Delivery</strong></td>
-            <td>Immediate delivery of cloud storage (Google Drive, GitHub, APIs) via JSON export</td>
-            <td>Interactive Delivery Modal Active</td>
+            <td><strong>Audit Ledger & Delivery</strong></td>
+            <td>Dual verification via Solana blockchain memo and Supabase PostgreSQL persistence</td>
+            <td>Instant DB Ledger Sync Active</td>
           </tr>
         </tbody>
       </table>
 
       <h2>5. Milestone Roadmap & Grant Utilization</h2>
       <ul>
-        <li><strong>Milestone 1 — Core PayFi Rail & Atomic 3-Way Split (Completed):</strong> Deployed and verified on-chain atomic 90/5/5 settlement on Solana Devnet. Implemented verified merchant role gating, instant Gas Tank refill, client receipt modals with `.json` exports, and automated Solscan transaction verification.</li>
+        <li><strong>Milestone 1 — Core PayFi Rail & Compliance Architecture (Completed):</strong> Deployed on-chain atomic 90/5/5 settlement on Solana. Implemented role-gated merchant access, OFAC edge geo-blocking, Supabase live audit sync, client receipt modals with `.json` exports, and international non-custodial legal disclaimers.</li>
         <li><strong>Milestone 2 — Autonomous Agent SDK & Pyth Real-Time Pricing:</strong> Release `@autonpay/sdk` for Python and Node.js enabling AI agents to programmatically buy compute quotas. Integrate Pyth Network oracles for dynamic dynamic SOL/USD pricing and deploy Squads v4 multisig for admin treasury management.</li>
-        <li><strong>Milestone 3 — Security Audit & Mainnet Launch:</strong> Complete formal smart contract auditing (Sec3/OtterSec), launch compliance-verified vendor staking, and deploy production PayFi rails for global Web3 AI & developer marketplaces.</li>
+        <li><strong>Milestone 3 — Security Audit & Enterprise Merchant Scale:</strong> Complete formal smart contract auditing (Sec3/OtterSec), launch compliance-verified vendor staking, and scale production PayFi rails for global Web3 AI & developer marketplaces.</li>
       </ul>
 
       <div class="footer">
         <span>© 2026 AutonPay Protocol • Confidential Grant Proposal</span>
-        <span>Network: Solana Devnet Cluster • Track: PayFi / AI Agents</span>
+        <span>Network: Solana Mainnet & Devnet Supported • Track: PayFi / AI Agents</span>
       </div>
     </div>
 

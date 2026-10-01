@@ -814,46 +814,64 @@ export default function App() {
             )}
 
             {activeTab === 'vendor' && (
-              !isVendor ? (
-                <div className="bg-[#0b1222] border border-cyan-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
-                  <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                    🛡️
-                  </div>
-                  <h3 className="text-base font-bold text-white uppercase tracking-wider">
-                    Verified Merchant Portal
-                  </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    Asset publishing and merchant settlement management are strictly restricted to 
-                    compliance-verified vendors to protect the decentralized ecosystem.
-                    {isWalletConnected ? (
-                      <span className="block mt-2 font-mono text-[11px] text-amber-400">
-                        Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Buyer Account / Unregistered)
-                      </span>
-                    ) : (
-                      <span className="block mt-2 text-slate-500">
-                        Please connect an authorized vendor wallet to continue.
-                      </span>
-                    )}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleConnectWallet}
-                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
-                  </button>
-                </div>
-              ) : (
-                <VendorPortal
-                  vendorWallet={walletAddress}
-                  products={products}
-                  onAddProduct={handleAddProduct}
-                  onUpdateProduct={handleUpdateProduct}
-                  onDeleteProduct={handleDeleteProduct}
-                  sales={merchantSales}
-                />
-              )
-            )}
+  !isVendor ? (
+    <div className="bg-[#0b1222] border border-cyan-900/50 rounded-3xl p-10 text-center max-w-lg mx-auto my-12 space-y-4 shadow-2xl font-mono">
+      <div className="w-16 h-16 mx-auto bg-slate-900 border border-cyan-800/50 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+        🛡️
+      </div>
+      <h3 className="text-base font-bold text-white uppercase tracking-wider">
+        Verified Merchant Portal
+      </h3>
+      <p className="text-xs text-slate-400 leading-relaxed font-sans">
+        Asset publishing and merchant settlement management are strictly restricted to 
+        compliance-verified vendors to protect the decentralized ecosystem.
+        {isWalletConnected ? (
+          <span className="block mt-2 font-mono text-[11px] text-amber-400">
+            Connected: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)} (Buyer Account / Unregistered)
+          </span>
+        ) : (
+          <span className="block mt-2 text-slate-500">
+            Please connect an authorized vendor wallet to continue.
+          </span>
+        )}
+      </p>
+
+      <div className="space-y-2.5 pt-1">
+        {/* Tombol Connect / Switch Wallet */}
+        <button
+          type="button"
+          onClick={handleConnectWallet}
+          className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:opacity-90 text-white font-bold text-xs py-3 rounded-xl transition shadow-lg flex items-center justify-center gap-2"
+        >
+          <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+        </button>
+
+        {/* Tombol Onboarding Telegram Langsung ke @provizto */}
+        <a
+          href="https://t.me/provizto"
+          target="_blank"
+          rel="noreferrer"
+          className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/60 text-cyan-400 hover:text-cyan-300 font-bold font-mono text-xs py-3 rounded-xl transition flex items-center justify-center gap-2 shadow"
+        >
+          <span>✈️</span> Apply for Merchant Access (@provizto)
+        </a>
+      </div>
+
+      <p className="text-[10px] text-slate-500 font-sans">
+        Vendor onboarding is subject to manual compliance verification before whitelist approval.
+      </p>
+    </div>
+  ) : (
+    <VendorPortal
+      vendorWallet={walletAddress}
+      products={products}
+      onAddProduct={handleAddProduct}
+      onUpdateProduct={handleUpdateProduct}
+      onDeleteProduct={handleDeleteProduct}
+      sales={merchantSales}
+    />
+  )
+)}
 
             {activeTab === 'admin' && (
               !isAdmin ? (

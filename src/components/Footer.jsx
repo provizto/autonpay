@@ -122,38 +122,55 @@ export default function Footer() {
         </div>
       </footer>
 
-      {/* Modal Non-Custodial Disclaimer */}
+      {/* Modal Non-Custodial Disclaimer & Legal Compliance */}
       {showDisclaimer && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 font-mono">
           <div className="bg-[#0b1222] border border-slate-700 max-w-lg w-full rounded-2xl p-6 text-slate-300 text-xs shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <span className="text-cyan-400 font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-                🛡️ Protocol Disclaimer
+                🛡️ Protocol Disclaimer & Terms
               </span>
               <button
+                type="button"
                 onClick={() => setShowDisclaimer(false)}
-                className="text-slate-400 hover:text-white text-base font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800"
+                className="text-slate-400 hover:text-white text-base font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800 transition"
               >
                 ✕
               </button>
             </div>
             
-            <div className="space-y-3 leading-relaxed text-[11px] text-slate-400">
+            <div className="max-h-[60vh] overflow-y-auto pr-2 space-y-3.5 leading-relaxed text-[11px] text-slate-400 scrollbar-thin">
               <p>
-                <strong className="text-slate-200">Non-Custodial Architecture:</strong> AutonPay is a decentralized, non-custodial software protocol deployed on the Solana blockchain. It never holds, controls, or escrows user funds.
+                <strong className="text-slate-200 block mb-0.5">1. Non-Custodial Architecture:</strong>
+                AutonPay is a decentralized, non-custodial software protocol deployed on the Solana blockchain. It never holds, controls, manages, or escrows user funds at any point.
               </p>
+
               <p>
-                <strong className="text-slate-200">Autonomous Settlement:</strong> All transactions and fee distributions (vendor, protocol, and referrals) are executed deterministically on-chain via smart contracts directly between peer wallets.
+                <strong className="text-slate-200 block mb-0.5">2. Autonomous Settlement & Finality:</strong>
+                All transactions and fee allocations (Vendor 90%, Protocol 5%, Affiliate 5%) execute deterministically on-chain peer-to-peer. All blockchain settlements are irreversible, final, and strictly non-refundable.
               </p>
+
               <p>
-                <strong className="text-slate-200">As-Is Software:</strong> The interface and smart contracts are provided on an "as-is" basis without warranties of any kind. Users are solely responsible for compliance with local regulations in their respective jurisdictions.
+                <strong className="text-slate-200 block mb-0.5">3. Sanctions & Jurisdiction Compliance (OFAC):</strong>
+                By accessing this interface or connecting a wallet, you confirm that you are not located in, a citizen of, or resident of any jurisdiction subject to comprehensive international sanctions or embargoes (including OFAC, EU, and UN lists), nor an individual on any restricted parties list.
+              </p>
+
+              <p>
+                <strong className="text-slate-200 block mb-0.5">4. Tax & Regulatory Responsibility:</strong>
+                Users and merchants bear sole responsibility for determining, reporting, and remitting any taxes (such as VAT, sales, or capital gains taxes) incurred from transactions conducted via this protocol.
+              </p>
+
+              <p>
+                <strong className="text-slate-200 block mb-0.5">5. "As-Is" Software & Limitation of Liability:</strong>
+                The interface and smart contracts are provided strictly on an "as-is" and "as-available" basis without warranties. Contributors and developers assume no liability for loss of assets, cryptographic failures, or network disruptions.
               </p>
             </div>
 
             <div className="mt-5 pt-3 border-t border-slate-800 flex justify-end">
               <button
+                type="button"
                 onClick={() => setShowDisclaimer(false)}
-                className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-4 py-1.5 rounded-xl transition active:scale-95"
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition active:scale-95 shadow-md"
               >
                 Understood
               </button>

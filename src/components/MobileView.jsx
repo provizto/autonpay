@@ -422,13 +422,31 @@ export default function MobileView({
                       )}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={onConnectWallet}
-                    className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2 rounded-xl transition shadow flex items-center justify-center gap-2"
-                  >
-                    <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
-                  </button>
+
+                  <div className="space-y-2 pt-1">
+                    {/* Tombol Connect / Switch Wallet */}
+                    <button
+                      type="button"
+                      onClick={onConnectWallet}
+                      className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-2.5 rounded-xl transition shadow flex items-center justify-center gap-2 active:scale-95"
+                    >
+                      <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
+                    </button>
+
+                    {/* Tombol Onboarding Telegram Langsung ke @provizto */}
+                    <a
+                      href="https://t.me/provizto"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/60 text-cyan-400 hover:text-cyan-300 font-bold font-mono text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2 shadow active:scale-95"
+                    >
+                      <span>✈️</span> Apply for Merchant Access (@provizto)
+                    </a>
+                  </div>
+
+                  <p className="text-[10px] text-slate-500 font-sans">
+                    Vendor access requires manual review before whitelist approval.
+                  </p>
                 </div>
               ) : (
                 <VendorPortal
