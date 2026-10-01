@@ -848,7 +848,7 @@ export default function App() {
 
         {/* Tombol Onboarding Telegram Langsung ke @provizto */}
         <a
-          href="https://t.me/provizto?text=Hi%20AutonPay%20Team,%20I%20would%20like%20to%20apply%20for%20Merchant%20Onboarding.%0A%0A-%20Project%20Name:%20%0A-%20Product%20Type%20(API/Compute/License):%20%0A-%20Solana%20Vendor%20Wallet:%20%0A-%20Website/Docs:%20"
+          href="https://t.me/AutonPayVendorBot?start=apply"
           target="_blank"
           rel="noreferrer"
           className="w-full bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/60 text-cyan-400 hover:text-cyan-300 font-bold font-mono text-xs py-3 rounded-xl transition flex items-center justify-center gap-2 shadow"
