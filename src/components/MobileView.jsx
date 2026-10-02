@@ -26,6 +26,7 @@ export default function MobileView({
   merchantSales = [],
   onClearSales,
   onBuyProduct,
+  onOpenMeteora,
 }) {
   const [currentTab, setCurrentTab] = useState('MARKET');
   const [searchQuery, setSearchQuery] = useState('');
@@ -432,6 +433,15 @@ export default function MobileView({
                     >
                       <span>👛</span> {walletAddress ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
                     </button>
+
+                    <button
+  type="button"
+  onClick={onOpenMeteora}
+  className="w-full flex items-center justify-center space-x-2 py-2 px-3 rounded-xl border border-cyan-500/40 bg-cyan-950/40 text-cyan-300 text-xs font-semibold hover:bg-cyan-900/50 transition active:scale-95 cursor-pointer my-1.5"
+>
+  <span>☄️</span>
+  <span>Launch Token (Meteora DBC)</span>
+</button>
 
                     {/* Tombol Onboarding Telegram Langsung ke @provizto */}
                     <a

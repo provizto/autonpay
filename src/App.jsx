@@ -22,6 +22,7 @@ import {
   subscribeToLiveSettlements 
 } from './services/settlements';
 import Footer from './components/Footer';
+import MeteoraLaunchModal from './components/MeteoraLaunchModal';
 
 // ==========================================
 // SOLANA DEVNET & PROTOCOL WALLET CONFIG
@@ -44,6 +45,7 @@ const getSolanaProvider = () => {
 };
 
 export default function App() {
+  const [isMeteoraModalOpen, setIsMeteoraModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
@@ -553,6 +555,7 @@ export default function App() {
           merchantSales={merchantSales}
           onClearSales={handleClearSales}
           onBuyProduct={(prod) => executeBuy(prod, false)}
+          onOpenMeteora={() => setIsMeteoraModalOpen(true)}
         />
       ) : (
         /* DESKTOP INTERFACE */
@@ -845,6 +848,15 @@ export default function App() {
         >
           <span>👛</span> {isWalletConnected ? 'Switch to Vendor Wallet' : 'Connect Vendor Wallet'}
         </button>
+
+        <button
+  type="button"
+  onClick={() => setIsMeteoraModalOpen(true)}
+  className="flex items-center space-x-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
+>
+  <span>☄️</span>
+  <span>Launch Token (Meteora DBC)</span>
+</button>
 
         {/* Tombol Onboarding Telegram Langsung ke @provizto */}
         <a
@@ -1218,6 +1230,12 @@ JSON.stringify({
 
       {/* FOOTER */}
       <Footer />
+
+      <MeteoraLaunchModal
+        isOpen={isMeteoraModalOpen}
+        onClose={() => setIsMeteoraModalOpen(false)}
+        vendorWallet=""
+      />
 
     </div>
   );
