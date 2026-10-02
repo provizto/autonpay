@@ -171,7 +171,7 @@ export default function App() {
   // Refill Saldo Agent Gas Tank
   const handleRefillGas = () => {
     setAgentVaultBalance((prev) => parseFloat((prev + 1.0).toFixed(3)));
-    addLog('SYS', 'Agent Gas Tank refilled (+1.000 Devnet SOL).');
+    addLog('SYS', 'Agent Gas Tank refilled (+1.000 Mainnet SOL).');
   };
 
   const formatSettlementItem = (item) => {
@@ -348,9 +348,9 @@ export default function App() {
         const connection = new Connection(MAINNET_RPC, 'confirmed');
         const bal = await connection.getBalance(provider.publicKey || resp.publicKey);
         setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
-        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
+        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Mainnet SOL)`);
       } catch {
-        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Devnet Cluster)`);
+        addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (Mainnet Cluster)`);
       }
     } catch (err) {
       addLog('ERR', 'Wallet connection rejected: ' + (err.message || 'Cancelled'));
