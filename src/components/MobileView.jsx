@@ -110,7 +110,7 @@ export default function MobileView({
                     alert(`Referral Link copied!\n\n${shareUrl}\n\nShare this link to automatically receive an instant 5% SOL!`);
                   }}
                   className="bg-purple-950/80 hover:bg-purple-900 border border-purple-800 text-purple-300 text-[11px] font-mono font-bold px-2 py-1.5 rounded-lg transition flex items-center gap-1 shadow shrink-0 active:scale-95"
-                  title="Salin Link Referral"
+                  title="Copy Referral Link"
                 >
                   <span>🔗</span> <span>5%</span>
                 </button>
@@ -459,14 +459,39 @@ export default function MobileView({
                   </p>
                 </div>
               ) : (
-                <VendorPortal
-                  vendorWallet={walletAddress}
-                  products={products}
-                  onAddProduct={onAddProduct}
-                  onUpdateProduct={onUpdateProduct}
-                  onDeleteProduct={onDeleteProduct}
-                  sales={merchantSales}
-                />
+                <div className="space-y-3">
+                  {/* METEORA DBC LAUNCHPAD BANNER (MOBILE VENDOR) */}
+                  <div className="bg-gradient-to-r from-[#0c1427] to-[#091122] border border-cyan-500/40 p-3 rounded-2xl flex items-center justify-between shadow-lg">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">☄️</span>
+                      <div>
+                        <div className="text-xs font-bold text-white font-mono flex items-center gap-1.5">
+                          <span>Meteora DBC</span>
+                          <span className="text-[9px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-1.5 py-0.5 rounded-full">
+                            Mainnet
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">Launch token &amp; auto-liquidity</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={onOpenMeteora}
+                      className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-mono text-xs px-3.5 py-1.5 rounded-xl transition active:scale-95 cursor-pointer shrink-0 shadow"
+                    >
+                      Launch
+                    </button>
+                  </div>
+
+                  <VendorPortal
+                    vendorWallet={walletAddress}
+                    products={products}
+                    onAddProduct={onAddProduct}
+                    onUpdateProduct={onUpdateProduct}
+                    onDeleteProduct={onDeleteProduct}
+                    sales={merchantSales}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -486,10 +511,10 @@ export default function MobileView({
                     <p className="text-[11px] text-slate-400 mt-1 font-sans leading-relaxed">
                       {walletAddress ? (
                         <>
-                          Dompet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> tidak memiliki izin administrator.
+                          Wallet <span className="text-amber-400 font-mono">{walletAddress.slice(0, 4)}...{walletAddress.slice(-4)}</span> is not authorized as an administrator.
                         </>
                       ) : (
-                        'Silakan hubungkan dompet resmi Admin untuk membuka panel audit.'
+                        'Please connect the designated protocol admin wallet to access the audit console.'
                       )}
                     </p>
                   </div>
