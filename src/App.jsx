@@ -874,14 +874,44 @@ export default function App() {
       </p>
     </div>
   ) : (
-    <VendorPortal
-      vendorWallet={walletAddress}
-      products={products}
-      onAddProduct={handleAddProduct}
-      onUpdateProduct={handleUpdateProduct}
-      onDeleteProduct={handleDeleteProduct}
-      sales={merchantSales}
-    />
+    <div className="space-y-5">
+      {/* METEORA DBC TOKEN LAUNCHPAD BANNER (MUNCUL DI DALAM PORTAL VENDOR) */}
+      <div className="bg-gradient-to-r from-[#0c1427] via-slate-900 to-[#091122] border border-cyan-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xl shrink-0">
+            ☄️
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
+              <span>Meteora DBC Token Launchpad</span>
+              <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded-full font-sans font-semibold">
+                Mainnet Live
+              </span>
+            </h4>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Deploy dynamic bonding curve tokens with 5% PayFi auto-liquidity routing on Solana Mainnet.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsMeteoraModalOpen(true)}
+          className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 active:scale-95 text-white font-bold font-mono text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+        >
+          <span>☄️</span>
+          <span>Launch Token (Meteora DBC)</span>
+        </button>
+      </div>
+
+      <VendorPortal
+        vendorWallet={walletAddress}
+        products={products}
+        onAddProduct={handleAddProduct}
+        onUpdateProduct={handleUpdateProduct}
+        onDeleteProduct={handleDeleteProduct}
+        sales={merchantSales}
+      />
+    </div>
   )
 )}
 
