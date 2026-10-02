@@ -16,17 +16,17 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
     setStatusMessage({ type: 'info', text: 'Initializing Meteora DBC Pool configuration...' });
 
     try {
-      // Simulasi inisialisasi pool Meteora DBC on-chain
+      // Simulate on-chain Meteora DBC pool deployment
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       setStatusMessage({
         type: 'success',
-        text: `Pool DBC untuk $${tokenSymbol.toUpperCase()} berhasil dikonfigurasi! 5% protocol fee siap dialirkan ke Meteora DAMM v2.`
+        text: `DBC Pool for $${tokenSymbol.toUpperCase()} successfully initialized! 5% protocol fee will auto-route to Meteora DAMM v2.`
       });
     } catch (err) {
       setStatusMessage({
         type: 'error',
-        text: `Gagal menginisialisasi pool: ${err.message}`
+        text: `Failed to initialize pool: ${err.message}`
       });
     } finally {
       setIsSubmitting(false);
@@ -37,7 +37,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
       <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[#0c1427] p-6 shadow-2xl text-slate-100">
         
-        {/* Header Modal */}
+        {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
           <div className="flex items-center space-x-3">
             <span className="text-2xl">☄️</span>
@@ -59,7 +59,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
           </button>
         </div>
 
-        {/* Form Peluncuran */}
+        {/* Launch Form */}
         <form onSubmit={handleDeployDBC} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
@@ -105,7 +105,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
             </div>
           </div>
 
-          {/* Pengaturan Pembagian PayFi */}
+          {/* PayFi Protocol Fee Routing */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-slate-300">
@@ -119,15 +119,15 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
               />
             </div>
             <p className="text-[11px] leading-relaxed text-slate-400">
-              Setiap kali aset AI/Compute dibeli di AutonPay, 5% fee protokol langsung dialirkan secara otomatis ke liquidity pool token ini di Meteora untuk menjaga stabilitas likuiditas.
+              Whenever an asset is settled on AutonPay, 5% protocol fee is automatically channeled into this pool on Meteora to bootstrap perpetual liquidity.
             </p>
           </div>
 
-          {/* Merchant Wallet Info */}
+          {/* Merchant Settlement Wallet Info */}
           <div className="text-[11px] text-slate-400">
             <span>Settlement Vendor Wallet: </span>
             <code className="text-cyan-300 font-mono">
-              {vendorWallet ? `${vendorWallet.slice(0, 6)}...${vendorWallet.slice(-4)}` : 'Wallet belum terhubung'}
+              {vendorWallet ? `${vendorWallet.slice(0, 6)}...${vendorWallet.slice(-4)}` : 'Wallet not connected'}
             </code>
           </div>
 
