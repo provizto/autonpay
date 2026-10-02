@@ -1,110 +1,127 @@
-# AutonPay (Autonomous PayFi & Digital Merchant Settlement Protocol)
+# AutonPay (Autonomous PayFi Rail & Meteora DBC Dynamic Liquidity Protocol)
 
-[![Solana Devnet](https://img.shields.io/badge/Solana-Devnet-14F195?logo=solana&logoColor=white)](https://solana.com)
+[![Solana Mainnet](https://img.shields.io/badge/Solana-Mainnet%20Live-14F195?logo=solana&logoColor=white)](https://solana.com)
+[![Meteora DBC](https://img.shields.io/badge/Meteora-DBC%20%26%20DAMM%20v2-FF4F99?logo=target&logoColor=white)](https://app.meteora.ag)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-Vite%20%7C%20React%20%7C%20Tailwind-61DAFB)](https://vitejs.dev)
-[![Architecture](https://img.shields.io/badge/Protocol-PayFi%20Merchant%20%2B%20M2M%20Commerce-blueviolet)](https://solscan.io)
+[![Architecture](https://img.shields.io/badge/Protocol-100%25%20Non--Custodial%20PayFi-blueviolet)](https://solscan.io)
 
-**AutonPay** adalah protokol **Payment Finance (PayFi)** terdesentralisasi di atas jaringan **Solana** yang dirancang khusus untuk memfasilitasi penjualan produk digital vendor, penerbitan lisensi kriptografis instan, serta eksekusi transaksi belanja otonom antar-agen AI (*Machine-to-Machine / M2M*).
+**AutonPay** adalah infrastruktur **Payment Finance (PayFi)** terdesentralisasi dan **100% Non-Custodial** di jaringan **Solana Mainnet**. Protokol ini dirancang untuk memfasilitasi perdagangan komputasi AI (*Machine-to-Machine / M2M*), lisensi API vendor, penerbitan lisensi on-chain instan, serta peluncuran token berbasis kurva dinamik menggunakan **Meteora Dynamic Bonding Curve (DBC) & DAMM v2**.
 
-Arus pendapatan protokol sepenuhnya bersumber dari **transaksi komersial riil produk vendor** (seperti lisensi API, aset digital, software key, dan kuota komputasi), tanpa mekanisme swap spekulatif atau pool likuiditas sintetis.
-
----
-
-## ⚡ Ringkasan Eksekutif & Model Bisnis
-
-Sistem pembayaran produk digital konvensional sering kali mengenakan potongan platform yang sangat besar, pencairan dana berminggu-minggu, serta ketiadaan dukungan transaksi langsung oleh program atau agen cerdas (AI).
-
-AutonPay menyederhanakan perdagangan digital Web3 melalui 4 pilar utama:
-
-1. **Pure Vendor Commerce**: Platform beroperasi murni sebagai gerbang perdagangan barang digital vendor, di mana setiap transaksi mewakili pembelian produk atau jasa nyata.
-2. **Atomic Multi-Split Settlement (90 : 5 : 5)**: Seluruh pembayaran dipecah secara langsung dan otomatis di on-chain dalam satu instruksi transaksi:
-   * **90% Vendor (Merchant / Creator)**: Diterima langsung di wallet penjual detik itu juga tanpa masa tunggu (*zero lockup / no escrow delay*).
-   * **5% Admin (Platform Protocol Fee)**: Pendapatan operasional untuk keberlanjutan relayer dan infrastruktur protokol.
-   * **5% Affiliate Partner (Referral)**: Komisi promosi instan yang langsung dikirimkan ke wallet pihak pereferensi.
-3. **Autonomous M2M (Machine-to-Machine) Procurement**: Agen AI dapat berbelanja lisensi API, kuota data, dan akses layanan langsung dari katalog vendor secara mandiri saat stok atau kuota kerjanya menipis.
-4. **On-Chain Cryptographic License Delivery**: Begitu pembayaran terkonfirmasi, protokol menerbitkan tanda bukti dan kunci lisensi digital unik yang dapat diverifikasi secara publik di Solana Explorer.
+Berbeda dengan launchpad spekulatif konvensional, likuiditas token proyek di AutonPay diperkuat langsung oleh **arus kas komersial nyata**: 5% *protocol fee* dari setiap transaksi penjualan otomatis dialirkan sebagai *Protocol-Owned Liquidity* (POL) ke pool Meteora DAMM v2.
 
 ---
 
-## 🏛️ Alur Arsitektur Transaksi
+## ⚡ Ringkasan Eksekutif & Sinergi Protokol
+
+Sistem pembayaran produk digital dan launchpad Web3 saat ini memiliki masalah mendasar:
+* **SaaS Konvensional:** Memotong biaya 10–20% dengan masa penahanan dana berminggu-minggu serta ketiadaan dukungan transaksi agen AI mandiri.
+* **Launchpad Spekulatif:** Likuiditas mengering pasca-peluncuran karena tidak ditopang utilitas atau pemasukan riil (*zero cash-flow*).
+
+AutonPay menyelesaikan masalah tersebut melalui 5 pilar utama:
+
+1. **Atomic Multi-Split Settlement (90 : 5 : 5)**: Seluruh pembayaran dieksekusi secara instan dan atomik di Solana Mainnet dalam satu bundle instruksi:
+   * **90% Merchant / Vendor**: Diterima detik itu juga tanpa *escrow* (*zero lockup / direct settlement*).
+   * **5% Protocol Treasury**: Cadangan likuiditas dan operasional protokol.
+   * **5% Affiliate Partner**: Komisi rujukan on-chain instan bagi mitra komunitas.
+2. **Meteora DBC Token Launchpad & DAMM v2 Flywheel**: Vendor terverifikasi dapat meluncurkan SPL token utilitas untuk produk komputasi/API mereka dengan parameter kurva Meteora DBC. Sebesar 5% protocol fee penjualan produk otomatis disalurkan untuk mempertebal likuiditas pool di Meteora DAMM v2 (*Compounding Liquidity*).
+3. **Autonomous M2M (Machine-to-Machine) Procurement**: Agen AI otonom dapat memantau kuota kerjanya dan melakukan *checkout* lisensi API / GPU secara mandiri via *background daemon*.
+4. **100% Non-Custodial & OFAC Compliant**: Tidak ada dana pengguna yang ditampung atau di-*escrow*. Protokol dilindungi *edge geofencing* untuk kepatuhan yurisdiksi global.
+5. **Dual Cryptographic Ledger**: Lisensi diikat permanen ke Solana SPL Memo Program dan diindeks secara *real-time* ke Supabase PostgreSQL.
+
+---
+
+## 🏛️ Alur Arsitektur Transaksi (PayFi + Meteora DBC)
 
 ```text
        [ Pembeli Manusia ]   atau   [ Agen Otonom AI M2M ]
                                │
                                ▼
-        ┌──────────────────────────────────────────────┐
-        │        Katalog Produk Digital Vendor         │
-        │    (Lisensi API, Kode Software, SaaS Access) │
-        └──────────────────────┬───────────────────────┘
-                               │
-                               │ Eksekusi Pembayaran On-Chain (SOL / USDC)
-                               ▼
-        ┌──────────────────────────────────────────────┐
-        │           AutonPay PayFi Core                │
-        │   - Solana Multi-Instruction Execution       │
-        │   - Single-Transaction Settlement            │
-        └──────────────────────┬───────────────────────┘
-                               │
-        ┌──────────────────────┼───────────────────────┐
-        │                      │                       │
-        ▼ (90%)                ▼ (5%)                  ▼ (5%)
- ┌──────────────┐       ┌──────────────┐        ┌──────────────┐
- │ Wallet       │       │ Wallet       │        │ Wallet       │
- │ Vendor       │       │ Admin        │        │ Affiliate    │
- └──────────────┘       └──────────────┘        └──────────────┘
-                               │
-                               ▼
-     ┌──────────────────────────────────────────────────┐
-     │  Modal Penyerahan Lisensi Digital On-Chain       │
-     │  - Bukti Kriptografis Unik (Hash Transaksi)      │
-     │  - Verifikasi Terbuka di Solscan Devnet          │
-     └──────────────────────────────────────────────────┘
+       ┌──────────────────────────────────────────────┐
+       │      Katalog Produk Digital & Komputasi AI   │
+       │    (Lisensi API, Model Weight, Compute SKU)  │
+       └──────────────────────┬───────────────────────┘
+                              │
+                              │ Eksekusi Atomic 90/5/5 di Solana Mainnet
+                              ▼
+       ┌──────────────────────────────────────────────┐
+       │             AutonPay PayFi Core              │
+       │    - Native SystemProgram Multi-Transfer     │
+       │    - Sub-Second Finality (Non-Custodial)     │
+       └──────────────────────┬───────────────────────┘
+                              │
+       ┌──────────────────────┼───────────────────────┐
+       │                      │                       │
+       ▼ (90%)                ▼ (5%)                  ▼ (5%)
+┌──────────────┐       ┌──────────────┐        ┌──────────────┐
+│ Wallet       │       │ Protocol     │        │ Wallet       │
+│ Vendor       │       │ Vault        │        │ Affiliate    │
+└──────────────┘       └──────┬───────┘        └──────────────┘
+                              │
+                              │ Auto-Liquidity Pipeline
+                              ▼
+       ┌──────────────────────────────────────────────┐
+       │       Meteora DBC & DAMM v2 Liquidity        │
+       │  - Protocol-Owned Liquidity (POL) Injection  │
+       │  - Continuous Price Floor & Deep Liquidity   │
+       └──────────────────────────────────────────────┘
+                              │
+                              ▼
+       ┌──────────────────────────────────────────────┐
+       │       Penyerahan Lisensi On-Chain            │
+       │  - SPL Memo Program Hash Verification        │
+       │  - Real-Time Indexing di Supabase DB         │
+       └──────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🔑 Fitur Utama
 
-### 1. 🛍️ Digital Vendor Marketplace & Gateway
-* Katalog produk digital terkurasi bagi vendor software, penyedia API, dan kreator aset digital.
-* Pengalaman *one-click checkout* menggunakan Solana Wallet (Phantom, Solflare, Backpack).
-* Aliran dana langsung ke dompet penjual (90%), mengeliminasi risiko penahanan dana oleh perantara terpusat.
+### 1. ☄️ Meteora DBC Token Launchpad (Mainnet Live)
+* Memungkinkan merchant dan penyedia komputasi AI meluncurkan token SPL dengan konfigurasi *Dynamic Bonding Curve* (DBC) langsung dari tab **Vendor Portal**.
+* Integrasi *auto-liquidity*: Fee penjualan produk 5% langsung memperkuat cadangan likuiditas di Meteora DAMM v2, menciptakan aset dengan *backing* omset komersial nyata.
 
-### 2. 🤝 Program Kemitraan Afiliasi Otomatis (5%)
-* Mitra komunitas cukup membagikan tautan produk atau memasukkan address referral.
-* Setiap pembelian yang terjadi melalui rujukan langsung mentransfer 5% bagian fee secara atomik ke wallet mitra.
+### 2. 🛍️ Digital Vendor Marketplace & Gateway
+* Katalog produk digital terkurasi khusus lisensi developer, compute power, dan aset digital.
+* *One-click checkout* non-kustodian mendukung Phantom, Solflare, dan Backpack.
+* Pencairan 90% instan langsung ke dompet penjual tanpa perantara.
 
 ### 3. 🤖 Modul Agen Otonom M2M (Agentic Commerce)
-* Pemicu otonom (*non-custodial trigger*) yang memantau sisa kuota dan mengeksekusi pembelian lisensi ke katalog vendor secara otomatis.
-* Dilengkapi kontrol keamanan penuh (*Start / Stop Switch*, batasan alokasi saldo, dan rekaman log transaksi agen).
+* Pemicu otonom mandiri (*background daemon*) yang mendeteksi habisnya kuota API agen dan membeli kuota baru secara otomatis di jaringan Solana Mainnet.
+* Dilengkapi *telemetry log*, switch darurat (*Start/Stop*), dan pemantau gas balance.
 
-### 4. 📜 Bukti Lisensi Digital Cepat & Ramping
-* Desain modal kuitansi transaksi yang ramping, responsif, dan optimal untuk layar ponsel pintar maupun peramban desktop.
-* Tautan verifikasi transaksi langsung menuju Solscan Devnet Explorer.
+### 4. 🤝 Program Afiliasi Otomatis (5%)
+* Cukup lampirkan parameter URL `?ref=WALLET_ADDRESS`.
+* Setiap transaksi otomatis membagi 5% fee secara on-chain detik itu juga ke wallet pereferensi.
+
+### 5. 🛡️ Kepatuhan & Keamanan Non-Custodial
+* *Role-gated merchant access* dengan alur kurasi onboarding terverifikasi.
+* *Edge-level geofencing* untuk penyaringan yurisdiksi kepatuhan sanksi internasional (OFAC).
 
 ---
 
 ## 🛠️ Tech Stack
 
-* **Blockchain**: Solana Devnet (`@solana/web3.js`, `@solana/wallet-adapter`)
-* **Frontend**: React 18, Vite
-* **Styling**: Tailwind CSS, Lucide Icons
-* **Deployment**: Vercel Edge Network, GitHub CI/CD
+* **Blockchain Core**: Solana Mainnet (`@solana/web3.js`, SPL Token Program, SPL Memo Program)
+* **Liquidity & Token Launchpad**: Meteora Dynamic Bonding Curve (DBC) & DAMM v2
+* **Database & Indexer**: Supabase (PostgreSQL Realtime Database)
+* **Frontend**: React 18, Vite, Tailwind CSS
+* **Network & Security**: Vercel Edge Network (OFAC Geofencing)
 
 ---
 
 ## 🚀 Panduan Menjalankan Proyek (Local Development)
 
 ### Prasyarat
-* [Node.js](https://nodejs.org/) v18+
-* Solana Wallet Extension yang disetel ke jaringan **Devnet**
+* Node.js v18+
+* Solana Wallet Extension (Phantom, Solflare, Backpack)
 
 ### Langkah Instalasi
 
 1. **Clone repositori:**
    ```bash
-   git clone https://github.com/provizto/autonpay.git
+   git clone [https://github.com/provizto/autonpay.git](https://github.com/provizto/autonpay.git)
    cd autonpay
    ```
 
@@ -113,11 +130,10 @@ AutonPay menyederhanakan perdagangan digital Web3 melalui 4 pilar utama:
    npm install
    ```
 
-3. **Jalankan development server:**
+3. **Jalankan local development server:**
    ```bash
    npm run dev
    ```
-   Buka peramban pada alamat lokal yang tertera (biasanya `http://localhost:5173`).
 
 4. **Kompilasi build produksi:**
    ```bash
@@ -126,17 +142,11 @@ AutonPay menyederhanakan perdagangan digital Web3 melalui 4 pilar utama:
 
 ---
 
-## 📱 Desain Antarmuka Mobile-First
+## 📝 Catatan Khusus Penjurian Hackathon (Superteam & Meteora Track)
 
-* **Bottom Dock Navigation**: Navigasi bawah terpadu untuk kemudahan akses jempol pada layar sentuh.
-* **Compact License Receipt**: Tampilan pop-up lisensi yang ringkas tanpa scrollbar yang mengganggu.
-* **Auto Responsive Grid**: Penyesuaian layout otomatis dari layar desktop ke tampilan mobile.
-
----
-
-## ⚠️ Catatan Devnet
-
-AutonPay saat ini berjalan di atas jaringan **Solana Devnet** untuk pengujian fungsionalitas, evaluasi alur PayFi, dan demonstrasi transaksi M2M. Jangan mengirim aset riil Mainnet ke alamat akun pengujian di aplikasi ini.
+* **Status Jaringan:** Sepenuhnya aktif dan beroperasi di **Solana Mainnet**.
+* **Model Likuiditas:** Memenuhi track *Creative end-to-end launch flows* melalui *Compounding Liquidity DAMM v2 Pools* yang bersumber dari pembagian fee PayFi 90/5/5.
+* **Akses Penjurian:** Jika repositori ini disetel ke *private*, tim penjuri dari Superteam / Meteora (GitHub ID: `dannxbt`) telah diberikan izin akses *Read*.
 
 ---
 
