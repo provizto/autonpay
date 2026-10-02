@@ -54,13 +54,25 @@ export async function executePayFiPayment({
     })
   );
 
-  // 4. Ambil blockhash terbaru & kirim via dompet pembeli
-  const { blockhash } = await connection.getLatestBlockhash('confirmed');
+  // 4. Fetch latest blockhash and broadcast transaction
+  const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = payerPubkey;
 
   const signature = await wallet.sendTransaction(transaction, connection);
-  await connection.confirmTransaction(signature, 'confirmed');
+
+  // Fallback confirmation polling
+  try {
+    await connection.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, 'confirmed');
+  } catch (err) {
+    for (let i = 0; i < 10; i++) {
+      await new Promise((res) => setTimeout(res, 2000));
+      const status = await connection.getSignatureStatus(signature, { searchTransactionHistory: true });
+      if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+        break;
+      }
+    }
+  }
 
   return {
     signature,

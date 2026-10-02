@@ -104,15 +104,28 @@ export async function executePayFiPurchase({
     throw new Error('Ekstensi wallet tidak terdeteksi.');
   }
 
-  // 5. Konfirmasi on-chain
-  const confirmation = await connection.confirmTransaction({
-    signature,
-    blockhash,
-    lastValidBlockHeight
-  }, 'confirmed');
-
-  if (confirmation.value.err) {
-    throw new Error('Transaksi ditolak oleh jaringan Solana.');
+  // 5. Confirm on-chain (with fallback polling for public RPC node desync)
+  try {
+    const confirmation = await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    }, 'confirmed');
+    if (confirmation?.value?.err) {
+      throw new Error('Transaction rejected on-chain.');
+    }
+  } catch (err) {
+    let isConfirmed = false;
+    for (let i = 0; i < 10; i++) {
+      await new Promise((res) => setTimeout(res, 2000));
+      const status = await connection.getSignatureStatus(signature, { searchTransactionHistory: true });
+      if (status?.value?.confirmationStatus === 'confirmed' || status?.value?.confirmationStatus === 'finalized') {
+        if (status.value.err) throw new Error('Transaction failed on-chain.');
+        isConfirmed = true;
+        break;
+      }
+    }
+    if (!isConfirmed) throw err;
   }
 
   return {
