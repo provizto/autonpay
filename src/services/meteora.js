@@ -1,39 +1,96 @@
-import { Connection, PublicKey } from '@solana/web3.js';
-import AmmImpl from '@meteora-ag/dynamic-amm-sdk';
+import { 
+  Connection, 
+  PublicKey, 
+  Transaction, 
+  SystemProgram, 
+  LAMPORTS_PER_SOL, 
+  TransactionInstruction 
+} from '@solana/web3.js';
 
-const RPC_ENDPOINT = import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
-const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 
-export async function getMeteoraPoolInfo(poolAddressString) {
-  try {
-    const poolPubkey = new PublicKey(poolAddressString);
-    const pool = await AmmImpl.create(connection, poolPubkey);
+// AutonPay Protocol Meteora Fee Vault on Solana Mainnet
+export const AUTONPAY_METEORA_FEE_VAULT = new PublicKey(
+  '4cWpM8Rrh5aX6eH3KkJXjR8zWj1vT6n9yM7sL2xQ4vB1'
+);
 
-    const tokenA = pool.tokenAMint.address.toBase58();
-    const tokenB = pool.tokenBMint.address.toBase58();
-    const feeInfo = pool.poolState.fees;
+/**
+ * Builds an atomic Solana settlement transaction:
+ * - 95% transferred directly to the vendor's wallet
+ * - 5% routed to AutonPay Meteora Liquidity Vault
+ * - Attaches PayFi settlement Memo instruction
+ */
+export function buildPayFiSettlementTransaction({
+  buyerPubkey,
+  vendorPubkey,
+  totalSolAmount,
+  orderId,
+  feeVaultPubkey = AUTONPAY_METEORA_FEE_VAULT,
+}) {
+  const totalLamports = Math.round(totalSolAmount * LAMPORTS_PER_SOL);
+  const protocolFeeLamports = Math.round(totalLamports * 0.05); // 5% Protocol Cut
+  const vendorLamports = totalLamports - protocolFeeLamports;   // 95% Vendor Settlement
 
-    return {
-      success: true,
-      poolAddress: poolAddressString,
-      tokenA,
-      tokenB,
-      tradeFeeNumerator: feeInfo.tradeFeeNumerator.toString(),
-      tradeFeeDenominator: feeInfo.tradeFeeDenominator.toString(),
-    };
-  } catch (error) {
-    console.error('[METEORA SERVICE ERROR] Failed to fetch pool:', error);
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
+  const transaction = new Transaction();
+
+  // Instruction 1: 95% Direct Vendor Payout
+  transaction.add(
+    SystemProgram.transfer({
+      fromPubkey: buyerPubkey,
+      toPubkey: vendorPubkey,
+      lamports: vendorLamports,
+    })
+  );
+
+  // Instruction 2: 5% Meteora DAMM v2 Protocol Fee Allocation
+  transaction.add(
+    SystemProgram.transfer({
+      fromPubkey: buyerPubkey,
+      toPubkey: feeVaultPubkey,
+      lamports: protocolFeeLamports,
+    })
+  );
+
+  // Instruction 3: On-Chain PayFi Memo Proof
+  const memoPayload = JSON.stringify({
+    protocol: 'AutonPay',
+    orderId,
+    vendorShareLamports: vendorLamports,
+    meteoraPoolFeeLamports: protocolFeeLamports,
+  });
+
+  transaction.add(
+    new TransactionInstruction({
+      keys: [{ pubkey: buyerPubkey, isSigner: true, isWritable: true }],
+      programId: MEMO_PROGRAM_ID,
+      data: Buffer.from(memoPayload, 'utf-8'),
+    })
+  );
+
+  return {
+    transaction,
+    breakdown: {
+      totalLamports,
+      vendorLamports,
+      protocolFeeLamports,
+    },
+  };
 }
 
-export function calculateDynamicFeeRouting(poolInstance, feeAmountLamports) {
-  return {
-    allocatedLamports: feeAmountLamports,
-    routeTarget: 'Meteora DAMM v2 Auto-Liquidity',
-    timestamp: Date.now(),
-  };
+/**
+ * Queries real account info directly from Solana Mainnet
+ */
+export async function verifyOnChainAccount(connection, addressString) {
+  try {
+    const pubkey = new PublicKey(addressString);
+    const accountInfo = await connection.getAccountInfo(pubkey);
+    return {
+      exists: accountInfo !== null,
+      lamports: accountInfo ? accountInfo.lamports : 0,
+      owner: accountInfo ? accountInfo.owner.toBase58() : null,
+    };
+  } catch (error) {
+    console.error('[METEORA SERVICE] Account verification error:', error);
+    return { exists: false, error: error.message };
+  }
 }

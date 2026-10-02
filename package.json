@@ -13,6 +13,7 @@
     "@meteora-ag/dlmm": "^1.9.14",
     "@meteora-ag/dynamic-amm-sdk": "^1.4.1",
     "@solana-mobile/wallet-adapter-mobile": "^2.3.0",
+    "@solana/spl-token": "^0.4.15",
     "@solana/wallet-adapter-base": "^0.9.27",
     "@solana/wallet-adapter-react": "^0.15.39",
     "@solana/wallet-adapter-react-ui": "^0.9.39",
