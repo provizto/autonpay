@@ -8,7 +8,7 @@ import {
 
 // RPC Solana Mainnet
 export const connection = new Connection(
-  import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com',
+  import.meta.env.VITE_SOLANA_RPC_URL || 'https://solana-rpc.publicnode.com',
   'confirmed'
 );
 

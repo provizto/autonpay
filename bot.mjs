@@ -18,7 +18,7 @@ const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPA
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 2. Solana Devnet Configuration
-const RPC_ENDPOINT = process.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+const RPC_ENDPOINT = process.env.VITE_SOLANA_RPC_URL || 'https://solana-rpc.publicnode.com';
 const connection = new Connection(RPC_ENDPOINT, 'confirmed');
 
 // Protocol Wallets

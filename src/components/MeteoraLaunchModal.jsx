@@ -11,7 +11,7 @@ import {
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
 const SYSVAR_RENT_PUBKEY = new PublicKey('SysvarRent111111111111111111111111111111111');
-const MAINNET_RPC = 'https://api.mainnet-beta.solana.com';
+const MAINNET_RPC = 'https://solana-rpc.publicnode.com';
 
 export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, provider }) {
   const [tokenName, setTokenName] = useState('');

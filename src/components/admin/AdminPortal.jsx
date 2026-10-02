@@ -4,7 +4,7 @@ import { ADMIN_WALLET_ADDRESS, DEFAULT_AFFILIATE_ADDRESS, DEVNET_RPC_URL } from 
 // Default Protocol Wallets
 const PROTOCOL_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 const PROTOCOL_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
-const PROTOCOL_DEVNET_RPC = 'https://api.mainnet-beta.solana.com';
+const PROTOCOL_DEVNET_RPC = 'https://solana-rpc.publicnode.com';
 
 export default function AdminPortal({ 
   sales = [], 

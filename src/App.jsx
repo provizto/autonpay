@@ -27,7 +27,7 @@ import MeteoraLaunchModal from './components/MeteoraLaunchModal';
 // ==========================================
 // SOLANA MAINNET & PROTOCOL WALLET CONFIG
 // ==========================================
-const MAINNET_RPC = 'https://api.mainnet-beta.solana.com';
+const MAINNET_RPC = 'https://solana-rpc.publicnode.com';
 
 const DEFAULT_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4'; 
 const DEFAULT_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';

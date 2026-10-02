@@ -6,7 +6,7 @@ import {
   LAMPORTS_PER_SOL 
 } from '@solana/web3.js';
 
-export const DEVNET_RPC = 'https://api.mainnet-beta.solana.com';
+export const DEVNET_RPC = 'https://solana-rpc.publicnode.com';
 export const DEFAULT_ADMIN_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 export const DEFAULT_AFFILIATE_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';
 export const DEFAULT_VENDOR_WALLET = 'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4';

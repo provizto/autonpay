@@ -4,7 +4,7 @@ import { PublicKey } from '@solana/web3.js';
 export const SOLANA_NETWORK = 'mainnet-beta';
 
 export const SOLANA_RPC_URL = 
-  import.meta.env.VITE_SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+  import.meta.env.VITE_SOLANA_RPC_URL || 'https://solana-rpc.publicnode.com';
 
 // Alias kompatibilitas jika ada file lama yang memanggil nama DEVNET_RPC_URL
 export const DEVNET_RPC_URL = SOLANA_RPC_URL;
