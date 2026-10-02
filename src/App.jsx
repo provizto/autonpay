@@ -382,8 +382,8 @@ export default function App() {
 
     try {
       if (hasWallet && !isAgentAuto) {
-        addLog('SYS', 'Awaiting wallet signature for Solana Devnet...');
-        const connection = new Connection(DEVNET_RPC, 'confirmed');
+        addLog('SYS', 'Awaiting wallet signature for Solana Mainnet...');
+        const connection = new Connection(MAINNET_RPC, 'confirmed');
         const buyerPubkey = provider.publicKey;
 
         const totalLamports = Math.round(gross * LAMPORTS_PER_SOL);
@@ -406,9 +406,9 @@ export default function App() {
         txSig = signed.signature || signed;
         isRealOnChain = true;
 
-        addLog('NET', `Broadcasted to Devnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
+        addLog('NET', `Broadcasted to Mainnet! Tx: ${txSig.slice(0, 10)}... Confirming...`);
         await connection.confirmTransaction({ signature: txSig, blockhash, lastValidBlockHeight }, 'confirmed');
-        addLog('NET', `Confirmed on Solana Devnet! Hash: ${txSig}`);
+        addLog('NET', `Confirmed on Solana Mainnet! Hash: ${txSig}`);
       } else {
         // Alur Autonomous Agent Daemon (Simulasi Gas Tank)
         if (agentVaultBalance < gross) {
@@ -874,32 +874,22 @@ export default function App() {
       </p>
     </div>
   ) : (
-    <div className="space-y-5">
-      {/* METEORA DBC TOKEN LAUNCHPAD BANNER (MUNCUL DI DALAM PORTAL VENDOR) */}
-      <div className="bg-gradient-to-r from-[#0c1427] via-slate-900 to-[#091122] border border-cyan-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+    <div className="space-y-4">
+      {/* KOTAK LAUNCHPAD METEORA DI DALAM DASHBOARD VENDOR */}
+      <div className="bg-[#0b1222] border border-cyan-500/40 p-4 rounded-2xl flex items-center justify-between shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-xl shrink-0">
-            ☄️
-          </div>
+          <span className="text-2xl">☄️</span>
           <div>
-            <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-              <span>Meteora DBC Token Launchpad</span>
-              <span className="text-[10px] bg-cyan-950 text-cyan-400 border border-cyan-800 px-2 py-0.5 rounded-full font-sans font-semibold">
-                Mainnet Live
-              </span>
-            </h4>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Deploy dynamic bonding curve tokens with 5% PayFi auto-liquidity routing on Solana Mainnet.
-            </p>
+            <h4 className="text-sm font-bold text-white font-mono">Meteora DBC Token Launchpad</h4>
+            <p className="text-xs text-slate-400">Deploy dynamic bonding curve tokens on Solana Mainnet.</p>
           </div>
         </div>
         <button
           type="button"
           onClick={() => setIsMeteoraModalOpen(true)}
-          className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 active:scale-95 text-white font-bold font-mono text-xs px-5 py-2.5 rounded-xl transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-mono text-xs px-4 py-2 rounded-xl transition cursor-pointer shrink-0"
         >
-          <span>☄️</span>
-          <span>Launch Token (Meteora DBC)</span>
+          Launch Token
         </button>
       </div>
 

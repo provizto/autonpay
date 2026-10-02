@@ -1,19 +1,16 @@
 import React, { useState } from 'react';
 import { 
-  Connection,
+  Connection, 
+  PublicKey, 
   Keypair, 
-  SystemProgram, 
   Transaction, 
-  TransactionInstruction, 
-  PublicKey 
+  SystemProgram, 
+  TransactionInstruction 
 } from '@solana/web3.js';
-import { 
-  TOKEN_PROGRAM_ID, 
-  MINT_SIZE, 
-  createInitializeMintInstruction 
-} from '@solana/spl-token';
 
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const SYSVAR_RENT_PUBKEY = new PublicKey('SysvarRent111111111111111111111111111111111');
 const MAINNET_RPC = 'https://api.mainnet-beta.solana.com';
 
 export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, provider }) {
@@ -45,43 +42,53 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
       const connection = new Connection(MAINNET_RPC, 'confirmed');
       const signerPubkey = new PublicKey(vendorWallet);
 
-      // 1. Check wallet SOL balance on Mainnet
+      // 1. Cek saldo akun
       const balanceLamports = await connection.getBalance(signerPubkey);
-      const rentExemptLamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
-      const requiredLamports = rentExemptLamports + 10000; // Rent + Network Fee
+      const mintSpace = 82; // SPL Token Mint Account Size
+      const rentExemptLamports = await connection.getMinimumBalanceForRentExemption(mintSpace);
+      const requiredLamports = rentExemptLamports + 10000;
 
       if (balanceLamports < requiredLamports) {
         throw new Error(
-          `Insufficient SOL. Need at least ${(requiredLamports / 1e9).toFixed(4)} SOL for rent exemption and network fees.`
+          `Insufficient SOL. Need at least ${(requiredLamports / 1e9).toFixed(4)} SOL for rent exemption.`
         );
       }
 
-      // 2. Generate a new Mint Keypair on Solana
+      // 2. Generate Mint Keypair baru
       const mintKeypair = Keypair.generate();
-
-      // 3. Build On-Chain Transaction Instructions
       const transaction = new Transaction();
 
+      // Instruction A: Create Account untuk Token Mint
       transaction.add(
         SystemProgram.createAccount({
           fromPubkey: signerPubkey,
           newAccountPubkey: mintKeypair.publicKey,
-          space: MINT_SIZE,
+          space: mintSpace,
           lamports: rentExemptLamports,
           programId: TOKEN_PROGRAM_ID,
         })
       );
 
+      // Instruction B: Initialize Mint (Native byte buffer tanpa dependency eksternal)
+      const initMintData = new Uint8Array(67);
+      initMintData[0] = 0; // InitializeMint instruction index
+      initMintData[1] = 9; // Decimals
+      initMintData.set(signerPubkey.toBytes(), 2);  // Mint Authority
+      initMintData[34] = 1;                         // Freeze Authority Flag (true)
+      initMintData.set(signerPubkey.toBytes(), 35); // Freeze Authority
+
       transaction.add(
-        createInitializeMintInstruction(
-          mintKeypair.publicKey,
-          9,
-          signerPubkey,
-          signerPubkey,
-          TOKEN_PROGRAM_ID
-        )
+        new TransactionInstruction({
+          keys: [
+            { pubkey: mintKeypair.publicKey, isSigner: false, isWritable: true },
+            { pubkey: SYSVAR_RENT_PUBKEY, isSigner: false, isWritable: false },
+          ],
+          programId: TOKEN_PROGRAM_ID,
+          data: initMintData,
+        })
       );
 
+      // Instruction C: Meteora DBC Protocol Metadata via Memo Program
       const dbcMetadataPayload = JSON.stringify({
         protocol: 'AutonPay',
         action: 'INITIALIZE_METEORA_DBC',
@@ -91,14 +98,14 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
         curveType,
         autoLiquidityFeeShare: autoLiquidityEnabled ? '5%' : '0%',
         vendor: signerPubkey.toBase58(),
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       transaction.add(
         new TransactionInstruction({
           keys: [{ pubkey: signerPubkey, isSigner: true, isWritable: true }],
           programId: MEMO_PROGRAM_ID,
-          data: Buffer.from(dbcMetadataPayload, 'utf-8'),
+          data: new TextEncoder().encode(dbcMetadataPayload),
         })
       );
 
@@ -106,10 +113,8 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
       transaction.recentBlockhash = blockhash;
       transaction.feePayer = signerPubkey;
 
-      // Partial sign by the mint keypair
       transaction.partialSign(mintKeypair);
 
-      // Sign and send via connected wallet provider
       let txSignature = '';
       if (activeProvider.signAndSendTransaction) {
         const res = await activeProvider.signAndSendTransaction(transaction);
@@ -130,8 +135,8 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
         symbol: tokenSymbol.trim().toUpperCase(),
       });
     } catch (err) {
-      console.error('[METEORA DBC DEPLOY ERROR]', err);
-      setErrorMessage(err.message || 'On-chain deployment transaction failed.');
+      console.error('[METEORA DBC ERROR]', err);
+      setErrorMessage(err.message || 'Deployment transaction rejected or failed.');
     } finally {
       setIsSubmitting(false);
     }
@@ -139,14 +144,14 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
-      <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[#0c1427] p-6 shadow-2xl text-slate-100">
+      <div className="relative w-full max-w-lg rounded-2xl border border-cyan-500/30 bg-[#0c1427] p-6 shadow-2xl text-slate-100 font-sans">
         
-        {/* Modal Header */}
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-5">
           <div className="flex items-center space-x-3">
             <span className="text-2xl">☄️</span>
             <div>
-              <h3 className="text-lg font-bold tracking-wide text-white">
+              <h3 className="text-lg font-bold tracking-wide text-white font-mono">
                 Meteora DBC Token Launchpad
               </h3>
               <p className="text-xs text-cyan-400">
@@ -163,7 +168,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
           </button>
         </div>
 
-        {/* Success Banner */}
+        {/* Success View */}
         {txResult ? (
           <div className="space-y-4">
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/40 p-4">
@@ -210,7 +215,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
         ) : (
           <form onSubmit={handleDeployDBC} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
                 Token / Project Name
               </label>
               <input
@@ -226,7 +231,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
                   Token Symbol
                 </label>
                 <input
@@ -241,7 +246,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1 font-mono">
                   Curve Mechanism
                 </label>
                 <select
@@ -274,10 +279,10 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
               </p>
             </div>
 
-            {/* Wallet Signer Info (Sesuai dengan state wallet di App.jsx) */}
-            <div className="text-[11px] text-slate-400 flex items-center justify-between">
+            {/* Wallet Signer */}
+            <div className="text-[11px] text-slate-400 flex items-center justify-between font-mono">
               <span>Signer Wallet:</span>
-              <code className="text-cyan-300 font-mono">
+              <code className="text-cyan-300">
                 {vendorWallet 
                   ? `${vendorWallet.slice(0, 6)}...${vendorWallet.slice(-4)}` 
                   : <span className="text-amber-400">Not Connected</span>}
@@ -290,7 +295,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, prov
               </div>
             )}
 
-            <div className="flex items-center justify-end space-x-3 pt-2">
+            <div className="flex items-center justify-end space-x-3 pt-2 font-mono">
               <button
                 type="button"
                 disabled={isSubmitting}
