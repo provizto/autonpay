@@ -5,6 +5,7 @@ export default function Footer() {
 
   // Link resmi token $AUTON di Pump.fun
   const PUMP_FUN_URL = "https://pump.fun/coin/2X7saQ967isTkJEP6FKgFuTzTWsH4ZMkCh1MDGDApump";
+  const METEORA_URL = "https://app.meteora.ag";
 
   const socialLinks = [
     {
@@ -65,6 +66,7 @@ export default function Footer() {
             <span className="text-cyan-400 font-bold">AutonPay</span>
             <span> PayFi Rail. </span>
             <button
+              type="button"
               onClick={() => setShowDisclaimer(true)}
               className="text-slate-500 hover:text-slate-300 underline underline-offset-2 ml-1 cursor-pointer transition"
             >
@@ -72,8 +74,17 @@ export default function Footer() {
             </button>
           </div>
 
-          {/* Proposal, Defense, & Pump.fun Direct Badge */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 text-[11px]">
+          {/* Badges: Meteora, Pump.fun, Proposal & Defense */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[11px]">
+            <a
+              href={METEORA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-300 hover:text-cyan-200 transition flex items-center gap-1.5 font-bold bg-cyan-950/40 border border-cyan-500/40 hover:border-cyan-400 px-3 py-1.5 rounded-xl shadow-sm active:scale-95"
+            >
+              <span>☄️</span> Meteora DAMM v2 ↗
+            </a>
+
             <a
               href={PUMP_FUN_URL}
               target="_blank"
@@ -128,12 +139,12 @@ export default function Footer() {
           <div className="bg-[#0b1222] border border-slate-700 max-w-lg w-full rounded-2xl p-6 text-slate-300 text-xs shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
               <span className="text-cyan-400 font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-                🛡️ Protocol Disclaimer & Terms
+                🛡️ Protocol Disclaimer &amp; Terms
               </span>
               <button
                 type="button"
                 onClick={() => setShowDisclaimer(false)}
-                className="text-slate-400 hover:text-white text-base font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800 transition"
+                className="text-slate-400 hover:text-white text-base font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800 transition cursor-pointer"
               >
                 ✕
               </button>
@@ -146,22 +157,22 @@ export default function Footer() {
               </p>
 
               <p>
-                <strong className="text-slate-200 block mb-0.5">2. Autonomous Settlement & Finality:</strong>
-                All transactions and fee allocations (Vendor 90%, Protocol 5%, Affiliate 5%) execute deterministically on-chain peer-to-peer. All blockchain settlements are irreversible, final, and strictly non-refundable.
+                <strong className="text-slate-200 block mb-0.5">2. Autonomous Settlement &amp; Meteora Liquidity Routing:</strong>
+                All transactions and fee allocations (Vendor 90%, Protocol Treasury 5%, Affiliate 5%) execute deterministically on-chain peer-to-peer. Protocol settlement fees are programmatically routed to reinforce Meteora dynamic bonding curve (DBC) and DAMM v2 liquidity pools. All blockchain settlements are irreversible, final, and strictly non-refundable.
               </p>
 
               <p>
-                <strong className="text-slate-200 block mb-0.5">3. Sanctions & Jurisdiction Compliance (OFAC):</strong>
+                <strong className="text-slate-200 block mb-0.5">3. Sanctions &amp; Jurisdiction Compliance (OFAC):</strong>
                 By accessing this interface or connecting a wallet, you confirm that you are not located in, a citizen of, or resident of any jurisdiction subject to comprehensive international sanctions or embargoes (including OFAC, EU, and UN lists), nor an individual on any restricted parties list.
               </p>
 
               <p>
-                <strong className="text-slate-200 block mb-0.5">4. Tax & Regulatory Responsibility:</strong>
+                <strong className="text-slate-200 block mb-0.5">4. Tax &amp; Regulatory Responsibility:</strong>
                 Users and merchants bear sole responsibility for determining, reporting, and remitting any taxes (such as VAT, sales, or capital gains taxes) incurred from transactions conducted via this protocol.
               </p>
 
               <p>
-                <strong className="text-slate-200 block mb-0.5">5. "As-Is" Software & Limitation of Liability:</strong>
+                <strong className="text-slate-200 block mb-0.5">5. "As-Is" Software &amp; Limitation of Liability:</strong>
                 The interface and smart contracts are provided strictly on an "as-is" and "as-available" basis without warranties. Contributors and developers assume no liability for loss of assets, cryptographic failures, or network disruptions.
               </p>
             </div>
@@ -170,7 +181,7 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={() => setShowDisclaimer(false)}
-                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition active:scale-95 shadow-md"
+                className="bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-5 py-2 rounded-xl transition active:scale-95 shadow-md cursor-pointer"
               >
                 Understood
               </button>

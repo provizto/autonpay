@@ -251,44 +251,48 @@
         <tr>
           <td>
             <div class="title">AUTONPAY ($AUTON)</div>
-            <div class="subtitle">Autonomous Machine-to-Machine PayFi Rail & Instant 90/5/5 Settlement Protocol</div>
+            <div class="subtitle">Autonomous PayFi Rail & Meteora DBC Dynamic Liquidity Protocol</div>
           </td>
           <td style="text-align: right; vertical-align: top;">
-            <span class="badge">Colosseum & Superteam Grant Ready</span>
+            <span class="badge">Solana PayFi & Meteora Track Ready</span>
           </td>
         </tr>
       </table>
 
       <h2>1. Executive Summary</h2>
       <p>
-        <strong>AUTONPAY</strong> is a production-grade, non-custodial PayFi infrastructure protocol natively deployed on Solana. Engineered for autonomous AI agents (M2M) and human software commerce, AutonPay eliminates manual billing, custodial counterparty risk, and intermediaries through an on-chain <strong>Atomic 90/5/5 Settlement Rail</strong>. When compute licenses, API credits, or digital assets are acquired, transactions execute deterministically in a single atomic bundle: <strong>90% settles directly to the verified vendor</strong>, <strong>5% to protocol treasury</strong>, and <strong>5% to the affiliate partner</strong>. The protocol integrates an autonomous settlement daemon (M2M bot execution), edge-level sanctions geo-fencing (OFAC compliance), role-gated merchant verification, and cryptographic license anchoring via Solana SPL Memo and Supabase Postgres ledgers.
+        <strong>AUTONPAY</strong> is a production-grade, 100% non-custodial PayFi infrastructure protocol deployed on the Solana Mainnet. Engineered for autonomous AI agents (M2M) and human software commerce, AutonPay eliminates manual billing, custodial counterparty risk, and intermediaries through an on-chain <strong>Atomic 90/5/5 Settlement Rail</strong>. When compute licenses, API credits, or digital assets are acquired, settlements execute deterministically in a single atomic transaction bundle: <strong>90% settles directly to the verified merchant</strong>, <strong>5% to protocol treasury</strong>, and <strong>5% to the affiliate partner</strong>. Integrated natively with <strong>Meteora DBC (Dynamic Bonding Curve) & DAMM v2</strong>, the protocol automatically channels 5% protocol fees into merchant token pools as Protocol-Owned Liquidity (POL), creating an economy where real commercial volume directly reinforces token liquidity reserves.
       </p>
 
       <h2>2. Problem Statement & Market Inefficiencies</h2>
       <ul>
         <li><strong>Friction in Agent-to-Agent (M2M) Commerce:</strong> Autonomous AI agents consuming decentralized LLMs, compute clusters, and data feeds cannot interface with traditional fiat banking or legacy credit card rails to renew quotas autonomously.</li>
         <li><strong>Custodial Counterparty & Regulatory Exposure:</strong> Traditional SaaS payment processors withhold merchant balances for 7–30 days while exposing operators to transmitter/escrow liabilities.</li>
-        <li><strong>Unverified & High-Risk Marketplace Catalogs:</strong> Open decentralized platforms often suffer from unauthorized asset spam or secondary liabilities without an authenticated vendor verification funnel.</li>
+        <li><strong>Speculative Token Launches vs. Zero Real Backing:</strong> Standard token launchpads lack real cash-flow backing, causing liquidity to dry up post-launch. AutonPay anchors token liquidity directly to real-world software licensing revenue via Meteora DAMM v2.</li>
         <li><strong>Lack of Real-Time Verifiable Licensing:</strong> Buyers lack tamper-proof, on-chain cryptographic proof linking their software or model access key directly to an immutable settlement block.</li>
       </ul>
 
       <h2>3. Core Technical Architecture (Atomic Transaction Pipeline)</h2>
-      <div class="ascii-box">[ Solana PayFi Atomic Settlement Pipeline ]
+      <div class="ascii-box">[ Solana PayFi & Meteora DBC Settlement Pipeline ]
 │
 ├── 1. Access Control, Compliance & Agent Telemetry
 │   ├── Edge Geofencing Firewall   (Vercel Edge Network OFAC Restricted Jurisdiction Filter)
-│   ├── Protocol Legal Disclaimer  (Non-Custodial Architecture, Finality & Tax Responsibility)
+│   ├── Protocol Legal Disclaimer  (100% Non-Custodial Architecture, Finality & Terms)
 │   ├── Merchant Gatekeeper Rail   (Role-Gated Whitelist & Curated Telegram Onboarding @provizto)
 │   └── Autonomous Settlement Bot  (Decoupled M2M Background Daemon Loop for Autonomous Purchasing)
 │
 ├── 2. Atomic 3-Way Split Execution (SystemProgram Transfer Pipeline)
 │   ├── Vendor Settlement Payout   (90% ➔ Direct to Whitelisted Vendor Wallet)
-│   ├── Protocol Platform Treasury (5%  ➔ Platform Admin Vault)
+│   ├── Protocol Treasury Vault    (5%  ➔ ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4)
 │   └── Affiliate Referral Pool    (5%  ➔ Direct Affiliate Partner / Fallback Vault)
 │
-└── 3. Cryptographic Verification & Audit Sync
+├── 3. Meteora DBC & DAMM v2 Liquidity Flywheel
+│   ├── Dynamic Bonding Curve Pool (On-chain SPL Mint & Meteora DBC Metadata Configuration)
+│   └── Auto-Liquidity Injection   (5% Protocol Settlement Fee permanently strengthens pool reserves)
+│
+└── 4. Cryptographic Verification & Audit Sync
     ├── Solana SPL Memo Program    (MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr)
-    ├── Unique Key Issuance Engine (AUTON-[SKU]-[HASH]-SOL Cryptographic Key)
+    ├── Unique Key Issuance Engine (AUTON-[SKU]-[HASH]-SOL Cryptographic License Key)
     ├── Digital Delivery Anchor    (Direct Cloud Storage, API Credential, or Compute Endpoint)
     └── Real-Time Ledger Sync      (Supabase Live Postgres Inflow Ledger & Auditable Logs)</div>
 
@@ -305,7 +309,17 @@
           <tr>
             <td><strong>Atomic Settlement Rail</strong></td>
             <td>Simultaneous multi-transfer payload via native Solana SystemProgram instructions</td>
-            <td>Deterministic 90:5:5 Split (Audited & Active)</td>
+            <td>Deterministic 90:5:5 Split (Mainnet Live)</td>
+          </tr>
+          <tr>
+            <td><strong>Meteora DBC Token Launchpad</strong></td>
+            <td>SPL Token Mint initialization with Dynamic Bonding Curve and DAMM v2 pool parameters</td>
+            <td>TokenkegQfe... & Meteora DBC Active</td>
+          </tr>
+          <tr>
+            <td><strong>Auto-Liquidity Flywheel</strong></td>
+            <td>5% Protocol fee routed to reinforce Meteora pool reserves (Protocol-Owned Liquidity)</td>
+            <td>Continuous Liquidity Support</td>
           </tr>
           <tr>
             <td><strong>SPL Memo Program ID</strong></td>
@@ -319,7 +333,7 @@
           <tr>
             <td><strong>Non-Custodial Architecture</strong></td>
             <td>Direct peer-to-peer wallet execution; zero escrow, zero intermediate holding of funds</td>
-            <td>Client & Protocol Disclaimers Active</td>
+            <td>100% Non-Custodial Disclaimers Active</td>
           </tr>
           <tr>
             <td><strong>Regulatory Compliance</strong></td>
@@ -336,24 +350,19 @@
             <td>Independent background settlement daemon running automated purchasing loops</td>
             <td>Production bot.mjs Daemon Active</td>
           </tr>
-          <tr>
-            <td><strong>Audit Ledger & Delivery</strong></td>
-            <td>Dual verification via Solana blockchain memo and Supabase PostgreSQL persistence</td>
-            <td>Instant DB Ledger Sync Active</td>
-          </tr>
         </tbody>
       </table>
 
       <h2>5. Milestone Roadmap & Grant Utilization</h2>
       <ul>
-        <li><strong>Milestone 1 — Core PayFi Rail & Compliance Architecture (Completed):</strong> Deployed on-chain atomic 90/5/5 settlement on Solana. Implemented role-gated merchant access, OFAC edge geo-blocking, Supabase live audit sync, client receipt modals with `.json` exports, and international non-custodial legal disclaimers.</li>
-        <li><strong>Milestone 2 — Autonomous Agent SDK & Pyth Real-Time Pricing:</strong> Release `@autonpay/sdk` for Python and Node.js enabling AI agents to programmatically buy compute quotas. Integrate Pyth Network oracles for dynamic dynamic SOL/USD pricing and deploy Squads v4 multisig for admin treasury management.</li>
-        <li><strong>Milestone 3 — Security Audit & Enterprise Merchant Scale:</strong> Complete formal smart contract auditing (Sec3/OtterSec), launch compliance-verified vendor staking, and scale production PayFi rails for global Web3 AI & developer marketplaces.</li>
+        <li><strong>Milestone 1 — Core PayFi Rail & Meteora DBC Launchpad (Completed):</strong> Deployed on-chain atomic 90/5/5 settlement and Meteora DBC launchpad modal on Solana Mainnet. Implemented role-gated merchant access, OFAC edge geo-blocking, Supabase live audit sync, client receipt modals with `.json` exports, and international non-custodial legal disclaimers.</li>
+        <li><strong>Milestone 2 — Autonomous Agent SDK & Pyth Real-Time Pricing:</strong> Release `@autonpay/sdk` for Python and Node.js enabling AI agents to programmatically buy compute quotas and interact with Meteora pools. Integrate Pyth Network oracles for dynamic SOL/USD pricing and deploy Squads v4 multisig for protocol treasury management.</li>
+        <li><strong>Milestone 3 — Security Audit & Enterprise Merchant Scale:</strong> Complete formal smart contract auditing (Sec3/OtterSec), launch compliance-verified vendor staking, and expand Meteora DAMM v2 dynamic fee pools for global Web3 AI & developer marketplaces.</li>
       </ul>
 
       <div class="footer">
         <span>© 2026 AutonPay Protocol • Confidential Grant Proposal</span>
-        <span>Network: Solana Mainnet & Devnet Supported • Track: PayFi / AI Agents</span>
+        <span>Network: Solana Mainnet Live • Track: PayFi / Meteora DBC / AI Agents</span>
       </div>
     </div>
 
