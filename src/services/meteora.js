@@ -11,7 +11,7 @@ const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfc
 
 // AutonPay Protocol Meteora Fee Vault on Solana Mainnet
 export const AUTONPAY_METEORA_FEE_VAULT = new PublicKey(
-  '4cWpM8Rrh5aX6eH3KkJXjR8zWj1vT6n9yM7sL2xQ4vB1'
+  'ABemMJGexeCCkccM5WdeDpMZoAtPn4s3B2fJJfpRPuM4'
 );
 
 /**

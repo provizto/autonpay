@@ -345,7 +345,7 @@ export default function App() {
       const walletName = walletType === 'phantom' ? 'Phantom' : walletType === 'solflare' ? 'Solflare' : walletType === 'backpack' ? 'Backpack' : 'Web3 Wallet';
 
       try {
-        const connection = new Connection(DEVNET_RPC, 'confirmed');
+        const connection = new Connection(MAINNET_RPC, 'confirmed');
         const bal = await connection.getBalance(provider.publicKey || resp.publicKey);
         setRealSolBalance((bal / LAMPORTS_PER_SOL).toFixed(3));
         addLog('NET', `${walletName} Connected: ${pub.slice(0, 6)}... (${(bal / LAMPORTS_PER_SOL).toFixed(3)} Devnet SOL)`);
@@ -852,7 +852,7 @@ export default function App() {
         <button
   type="button"
   onClick={() => setIsMeteoraModalOpen(true)}
-  className="flex items-center space-x-1.5 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
+  className="w-full flex items-center justify-center space-x-2 py-3 rounded-xl border border-cyan-500/40 bg-cyan-500/10 text-xs font-bold text-cyan-300 hover:bg-cyan-500/20 transition cursor-pointer"
 >
   <span>☄️</span>
   <span>Launch Token (Meteora DBC)</span>
@@ -1232,10 +1232,11 @@ JSON.stringify({
       <Footer />
 
       <MeteoraLaunchModal
-        isOpen={isMeteoraModalOpen}
-        onClose={() => setIsMeteoraModalOpen(false)}
-        vendorWallet=""
-      />
+  isOpen={isMeteoraModalOpen}
+  onClose={() => setIsMeteoraModalOpen(false)}
+  vendorWallet={walletAddress}
+  provider={connectedProvider}
+/>
 
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { 
+  Connection,
   Keypair, 
   SystemProgram, 
   Transaction, 
@@ -14,11 +14,9 @@ import {
 } from '@solana/spl-token';
 
 const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr');
+const MAINNET_RPC = 'https://api.mainnet-beta.solana.com';
 
-export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
-  const { connection } = useConnection();
-  const { publicKey, sendTransaction } = useWallet();
-
+export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet, provider }) {
   const [tokenName, setTokenName] = useState('');
   const [tokenSymbol, setTokenSymbol] = useState('');
   const [curveType, setCurveType] = useState('dynamic_bonding');
@@ -34,7 +32,9 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
     setErrorMessage(null);
     setTxResult(null);
 
-    if (!publicKey) {
+    const activeProvider = provider || window.phantom?.solana || window.solflare || window.solana;
+
+    if (!vendorWallet || !activeProvider) {
       setErrorMessage('Please connect your authorized vendor wallet first.');
       return;
     }
@@ -42,10 +42,13 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
     setIsSubmitting(true);
 
     try {
+      const connection = new Connection(MAINNET_RPC, 'confirmed');
+      const signerPubkey = new PublicKey(vendorWallet);
+
       // 1. Check wallet SOL balance on Mainnet
-      const balanceLamports = await connection.getBalance(publicKey);
+      const balanceLamports = await connection.getBalance(signerPubkey);
       const rentExemptLamports = await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
-      const requiredLamports = rentExemptLamports + 5000; // Rent + Network Fee
+      const requiredLamports = rentExemptLamports + 10000; // Rent + Network Fee
 
       if (balanceLamports < requiredLamports) {
         throw new Error(
@@ -59,10 +62,9 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
       // 3. Build On-Chain Transaction Instructions
       const transaction = new Transaction();
 
-      // Instruction A: Allocate Rent-Exempt Account for the Token Mint
       transaction.add(
         SystemProgram.createAccount({
-          fromPubkey: publicKey,
+          fromPubkey: signerPubkey,
           newAccountPubkey: mintKeypair.publicKey,
           space: MINT_SIZE,
           lamports: rentExemptLamports,
@@ -70,18 +72,16 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
         })
       );
 
-      // Instruction B: Initialize the Mint (Decimals: 9)
       transaction.add(
         createInitializeMintInstruction(
           mintKeypair.publicKey,
           9,
-          publicKey,
-          publicKey,
+          signerPubkey,
+          signerPubkey,
           TOKEN_PROGRAM_ID
         )
       );
 
-      // Instruction C: Register Meteora DBC Payload via Memo Program
       const dbcMetadataPayload = JSON.stringify({
         protocol: 'AutonPay',
         action: 'INITIALIZE_METEORA_DBC',
@@ -90,35 +90,40 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
         mint: mintKeypair.publicKey.toBase58(),
         curveType,
         autoLiquidityFeeShare: autoLiquidityEnabled ? '5%' : '0%',
-        vendor: publicKey.toBase58(),
+        vendor: signerPubkey.toBase58(),
         timestamp: Date.now()
       });
 
       transaction.add(
         new TransactionInstruction({
-          keys: [{ pubkey: publicKey, isSigner: true, isWritable: true }],
+          keys: [{ pubkey: signerPubkey, isSigner: true, isWritable: true }],
           programId: MEMO_PROGRAM_ID,
           data: Buffer.from(dbcMetadataPayload, 'utf-8'),
         })
       );
 
-      // 4. Fetch Latest Blockhash & Set Fee Payer
       const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
       transaction.recentBlockhash = blockhash;
-      transaction.feePayer = publicKey;
+      transaction.feePayer = signerPubkey;
 
-      // 5. Send Real Transaction & Sign via Connected Wallet + Mint Keypair
-      const txSignature = await sendTransaction(transaction, connection, {
-        signers: [mintKeypair],
-      });
+      // Partial sign by the mint keypair
+      transaction.partialSign(mintKeypair);
 
-      // 6. Await Real Network Block Confirmation
+      // Sign and send via connected wallet provider
+      let txSignature = '';
+      if (activeProvider.signAndSendTransaction) {
+        const res = await activeProvider.signAndSendTransaction(transaction);
+        txSignature = res.signature || res;
+      } else {
+        const signedTx = await activeProvider.signTransaction(transaction);
+        txSignature = await connection.sendRawTransaction(signedTx.serialize());
+      }
+
       await connection.confirmTransaction(
         { signature: txSignature, blockhash, lastValidBlockHeight },
         'confirmed'
       );
 
-      // 7. Success Result with Real Mainnet Addresses
       setTxResult({
         signature: txSignature,
         mintAddress: mintKeypair.publicKey.toBase58(),
@@ -203,7 +208,6 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
             </button>
           </div>
         ) : (
-          /* Deployment Form */
           <form onSubmit={handleDeployDBC} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
@@ -252,7 +256,6 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
               </div>
             </div>
 
-            {/* Protocol Fee Routing Checkbox */}
             <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3.5 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-300">
@@ -271,22 +274,22 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
               </p>
             </div>
 
-            {/* Active Wallet Display */}
+            {/* Wallet Signer Info (Sesuai dengan state wallet di App.jsx) */}
             <div className="text-[11px] text-slate-400 flex items-center justify-between">
               <span>Signer Wallet:</span>
               <code className="text-cyan-300 font-mono">
-                {publicKey ? `${publicKey.toBase58().slice(0, 6)}...${publicKey.toBase58().slice(-4)}` : 'Not Connected'}
+                {vendorWallet 
+                  ? `${vendorWallet.slice(0, 6)}...${vendorWallet.slice(-4)}` 
+                  : <span className="text-amber-400">Not Connected</span>}
               </code>
             </div>
 
-            {/* Error Message */}
             {errorMessage && (
               <div className="rounded-lg border border-rose-500/30 bg-rose-950/60 p-2.5 text-xs text-rose-300">
                 {errorMessage}
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex items-center justify-end space-x-3 pt-2">
               <button
                 type="button"
@@ -298,7 +301,7 @@ export default function MeteoraLaunchModal({ isOpen, onClose, vendorWallet }) {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !publicKey}
+                disabled={isSubmitting || !vendorWallet}
                 className="rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-cyan-500/20 hover:brightness-110 active:scale-95 transition disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? 'Signing on Solana...' : 'Deploy on Mainnet'}
